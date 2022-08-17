@@ -23,9 +23,9 @@ from bot.messaging.events import Events
 log = logging.getLogger(__name__)
 
 
-class ClemBot(commands.Bot):
+class SocBot(commands.Bot):
     """
-    This is the base level bot class for ClemBot. 
+    This is the base level bot class for SocBot. 
 
     This handles the sending of all api events
     as well as the dynamic loading of services and cogs
