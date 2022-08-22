@@ -3,6 +3,8 @@
 
 .idea
 
+database/
+
 .vscode/settings.json
 Logs/
 

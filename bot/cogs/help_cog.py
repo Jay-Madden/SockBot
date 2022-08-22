@@ -6,6 +6,7 @@ import discord.ext.commands as commands
 
 import bot.extensions as ext
 from bot.consts import Colors
+import bot.bot_secrets as bot_secrets
 from bot.messaging.events import Events
 
 log = logging.getLogger(__name__)
@@ -99,7 +100,7 @@ class HelpCog(commands.Cog):
 
     async def send_default_help(self, ctx, title=None):
 
-        prefix = await self.bot.current_prefix(ctx)
+        prefix = bot_secrets.secrets.bot_prefix
 
         cog_embeds = []
         commands_str = self.get_commands_repr(self.bot.commands, prefix)
