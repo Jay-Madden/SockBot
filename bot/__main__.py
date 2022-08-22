@@ -6,7 +6,6 @@ from datetime import datetime
 from pathlib import Path
 
 import discord
-import bot
 
 import bot.bot_secrets as bot_secrets
 from bot.sock_bot import SockBot as SockBot

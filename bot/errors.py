@@ -38,15 +38,6 @@ class ParserError(Exception):
         self.message = message
 
 
-class ClaimsAccessError(CommandError):
-    """
-    Raised if a user attempts to use a command that they do not have claims for
-    """
-
-    def __init__(self, message: str):
-        self.message = message
-
-
 class ConversionError(CommandError):
 
     def __init__(self, message):

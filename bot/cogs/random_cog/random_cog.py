@@ -1,10 +1,7 @@
-import asyncio
 import json
 import logging
 import random
 import time
-import typing
-from datetime import datetime
 
 import aiohttp
 import discord
@@ -13,7 +10,6 @@ import discord.ext.commands as commands
 import bot.extensions as ext
 from bot.consts import Colors
 from bot.messaging.events import Events
-from bot.utils.converters import Duration
 
 log = logging.getLogger(__name__)
 
