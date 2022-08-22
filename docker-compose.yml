@@ -1,6 +1,6 @@
 version: "3.7"
 services:
-  SockBot:
+  sockbot:
     build: .
     restart: always
     user: root
