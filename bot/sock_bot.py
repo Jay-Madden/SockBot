@@ -11,6 +11,7 @@ from discord.ext import commands
 
 import bot.cogs as cogs
 import bot.services as services
+import bot.bot_secrets as bot_secrets
 from bot.consts import Colors
 from bot.data.database import Database
 from bot.messaging.events import Events
@@ -53,6 +54,11 @@ class SockBot(commands.Bot):
         embed.add_field(name='Startup Time', value=time)
         embed.set_thumbnail(url=self.user.avatar.url)
 
+        for channel_id in bot_secrets.secrets.startup_log_channel_ids:
+            channel = await self.fetch_channel(channel_id)
+            if channel:
+                await channel.send(embed=embed)
+
         log.info(f'Logged on as {self.user}')
 
     async def close(self) -> None:
@@ -62,6 +68,11 @@ class SockBot(commands.Bot):
             time = datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
             embed.add_field(name='Shutdown Time', value=time)
             embed.set_thumbnail(url=self.user.avatar.url)
+
+            for channel_id in bot_secrets.secrets.startup_log_channel_ids:
+                channel = await self.fetch_channel(channel_id)
+                if channel:
+                    await channel.send(embed=embed)
         except Exception as e:
             log.error(f'Logout error embed failed with error {e}')
 
