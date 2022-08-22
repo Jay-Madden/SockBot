@@ -4,9 +4,7 @@ services:
     build: .
     restart: always
     user: root
-    depends_on: 
-      - snekbox
-    env_file: 
+    env_file:
       - bot_env.env
     volumes:
       - ~/database:/SockBot/database
