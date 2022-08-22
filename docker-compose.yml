@@ -5,7 +5,7 @@ services:
     restart: always
     user: root
     env_file:
-      - bot_env.env
+      - sockbot_env.env
     volumes:
       - ~/database:/SockBot/database
       - ~/SockBot-Logs:/SockBot/Logs
