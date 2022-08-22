@@ -42,7 +42,6 @@ class SockBot(commands.Bot):
         """
         await self.load_cogs()
 
-
         await Database().create_database()
 
     async def on_ready(self) -> None:

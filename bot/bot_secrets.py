@@ -10,8 +10,6 @@ log = logging.getLogger(__name__)
 
 class BotSecrets:
     def __init__(self) -> None:
-        self._client_token: str | None = None
-        self._client_secret: str | None = None
         self._bot_token: str | None = None
         self._bot_prefix: str | None = None
         self._gifMe_token: str | None = None
@@ -20,49 +18,8 @@ class BotSecrets:
         self._weather_key: str | None = None
         self._geocode_key: str | None = None
         self._azure_translate_key: str | None = None
-        self._api_url: str | None = None
-        self._api_key: str | None = None
-        self._bot_only: bool | None = None
         self._startup_log_channel_ids: list[int] | None = None
         self._error_log_channel_ids: list[int] | None = None
-        self._site_url: str | None = None
-        self._docs_url: str | None = None
-
-    @property
-    def client_token(self) -> str:
-        """
-        The client api token defined in your developer page
-
-        Raises:
-            ConfigAccessError: Raised if the token has not been set
-
-        Returns:
-            str: The API Token
-        """
-
-        if not self._client_token:
-            raise ConfigAccessError("client_token has not been initialized")
-        else:
-            return self._client_token
-
-    @client_token.setter
-    def client_token(self, value: str | None) -> None:
-        if self._client_token:
-            raise ConfigAccessError("client_token has already been initialized")
-        else:
-            self._client_token = value
-
-    @property
-    def client_secret(self) -> str:
-        if not self._client_secret:
-            raise ConfigAccessError("client_secret has not been initialized")
-        return self._client_secret
-
-    @client_secret.setter
-    def client_secret(self, value: str | None) -> None:
-        if self._client_secret:
-            raise ConfigAccessError("client_secret has already been initialized")
-        self._client_secret = value
 
     @property
     def bot_token(self) -> str:
@@ -76,7 +33,7 @@ class BotSecrets:
             str: The api Token
         """
         if not self._bot_token:
-            raise ConfigAccessError("bot_token has not been intialized")
+            raise ConfigAccessError("bot_token has not been initialized")
         return self._bot_token
 
     @bot_token.setter
@@ -84,22 +41,6 @@ class BotSecrets:
         if self._bot_token:
             raise ConfigAccessError("bot_token has already been initialized")
         self._bot_token = value
-
-    @property
-    def bot_only(self) -> bool:
-        if not self._bot_only:
-            return False
-        return self._bot_only
-
-    @bot_only.setter
-    def bot_only(self, value: bool) -> None:
-        if self.bot_only:
-            raise ConfigAccessError("bot_only has already been initialized")
-
-        if isinstance(value, str):
-            self._bot_only = bool(value)
-        else:
-            self._bot_only = value
 
     @property
     def bot_prefix(self) -> str:
@@ -212,11 +153,8 @@ class BotSecrets:
     def load_development_secrets(self, lines: str) -> None:
         secrets = json.loads(lines)
 
-        self.client_token = secrets["ClientToken"]
-        self.client_secret = secrets["ClientSecret"]
         self.bot_token = secrets["BotToken"]
         self.bot_prefix = secrets["BotPrefix"]
-        self.bot_only = secrets["BotOnly"]
         self.startup_log_channel_ids = secrets["StartupLogChannelIds"]
         self.error_log_channel_ids = secrets["ErrorLogChannelIds"]
         self.gif_me_token = secrets["GifMeToken"]
@@ -231,8 +169,6 @@ class BotSecrets:
     def load_production_secrets(self) -> None:
 
         # Ignore these type errors, mypy doesn't know how to handle properties that return narrower types then they are assigned too
-        self.client_token = os.environ.get("CLIENT_TOKEN")  # type: ignore
-        self.client_secret = os.environ.get("CLIENT_SECRET")  # type: ignore
         self.bot_token = os.environ.get("BOT_TOKEN")  # type: ignore
         self.bot_prefix = os.environ.get("BOT_PREFIX")  # type: ignore
         self.startup_log_channel_ids = [
@@ -241,7 +177,6 @@ class BotSecrets:
         self.error_log_channel_ids = [
             int(n) for n in os.environ.get("ERROR_LOG_CHANNEL_IDS").split(",")  # type: ignore
         ]
-        self.bot_only = os.environ.get("BOT_ONLY")  # type: ignore
         self.gif_me_token = os.environ.get("GIF_ME_TOKEN")  # type: ignore
         self.github_url = os.environ.get("GITHUB_URL")  # type: ignore
         self.merriam_key = os.environ.get("MERRIAM_KEY")  # type: ignore
