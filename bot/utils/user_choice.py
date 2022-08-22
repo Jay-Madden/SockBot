@@ -22,7 +22,7 @@ class UserChoice:
 
         if not embed and content:
             embed = discord.Embed(title=content,
-                                  color=Colors.ClemsonOrange if not is_error else Colors.Error)
+                                  color=Colors.Purple if not is_error else Colors.Error)
 
         try:
             return bool(await self._send(embed, {1: '✅', 0: '❌'}))

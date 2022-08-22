@@ -4,7 +4,7 @@ This is a quick guide on how to develop and contribute to this project
 
 ## Dependencies
 Make sure you can run these commands and install them if not present.
-* Python 3.8 or higher
+* Python 3.10 or higher
 * pip3 (packaged as python3-pip)
 
 
@@ -36,24 +36,39 @@ ping @Jayy#6249 for permissions to add bots
 * `git clone` your fork to wherever you want to work on this bot
 * Copy `BotSecrets.json.template` and rename that copy to `BotSecrets.json`
 * Copy/paste the token from the Discord page into the `BotToken` empty string
-* Create a database name (Whatever you want it doesnt matter)
 * Set a custom bot prefix that will invoke your commands 
 
+## Prepare your ClemBot.Bot config variables
+* Copy `BotSecrets.json.template` and rename that copy to `BotSecrets.json`
+* Copy/paste the token from the Discord page into the `BotToken` empty string
+* Copy and paste the channel Ids of the channels in the test server that you want to use for Connection Status updates and Error Logging into the `ErrorLogChannelIds` and `StartupLogChannelIds`. If you dont want this. Leave the field as an empty brackets, []
+* Set a custom bot prefix in the `BotPrefix` field that will invoke your commands 
 
-## Setting up the build environment
-Setup a virtual environment:  
-`pip3 install virtualenv` windows: `py -m pip install --user virtualenv`
+### All Config Variables
 
-`virtualenv venv`  windows: `py -m venv venv`
+* `BotToken`:(Required) Your discord bots api access token
+* `BotPrefix`:(Required) Your discord bots prefix that it will default to responding too
+* `StartupLogChannelIds`:(Optional) The Id of the channel for the bot to send startup events too
+* `ErrorLogChannelIds`:(Optional) The Id of the channel for the bot to send error events too (recommended if you are doing work with services
+* `GifMeToken`:(Optional) GifMe api token
+* `MerriamKey`:(Optional) Merriam api token
+* `WeatherKey`:(Optional) Weather forecast api token
+* `GeocodeKey`:(Optional) Geocode weather service api token
+* `AzureTranslateKey`:(Optional) Azure translation api token
 
-Enter the virtualenv with:  
-`source venv/bin/activate` windows: `source .\env\Scripts\activate`
+## Setting up the ClemBot.Bot build environment
+Installing Poetry:  
+`pip3 install poetry` windows: `py -m pip install poetry`
 
-Then allow pip to get the latest libraries:  
-`pip3 install -r requirements.txt` windows: `py -m pip install -r requirements.txt`
+Tell Poetry to put the venv in the project folder
+`poetry config virtualenvs.in-project true`
+
+Installing dependencies with Poetry:
+`poetry install`
 
 You can then test-run the bot with the command:  
-`python3 -m bot`  windows: `py -m bot`
-when you are in the root directory `ClemBot/`
+`poetry run python3 -m bot`  windows: `poetry run py -m bot`
+when you are in the directory `SockBot/`
 
+The bot should show up in the test server and respond to commands (test with `<your_prefix>hello`)
 The bot should show up in the test server and respond to commands (test with `<your_prefix>hello`)

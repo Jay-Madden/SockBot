@@ -93,7 +93,7 @@ class ChainCog(commands.Cog):
         if parent.qualified_name == command_name:
             return parent
 
-        if isinstance(parent, ext.ClemBotGroup):
+        if isinstance(parent, ext.SockBotGroup):
             for c in parent.commands:
                 if result := self.find_command(c, command_name):
                     return result
@@ -178,5 +178,5 @@ class ChainCog(commands.Cog):
         return 0, ''
 
 
-def setup(bot):
-    bot.add_cog(ChainCog(bot))
+async def setup(bot):
+    await bot.add_cog(ChainCog(bot))

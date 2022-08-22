@@ -9,7 +9,7 @@ import discord
 import discord.ext.commands as commands
 
 import bot.extensions as ext
-from bot.bot_secrets import BotSecrets
+import bot.bot_secrets as bot_secrets
 from bot.consts import Colors
 from bot.messaging.events import Events
 
@@ -109,7 +109,7 @@ class defineCog(commands.Cog):
         Letters, numbers, and special characters (_, &, and -) are supported
         """
 
-        self.api_key = BotSecrets.get_instance().merriam_key
+        self.api_key = bot_secrets.secrets.merriam_key
 
         # Remove any characters besides &, _, or - that are not in ranges a-z, A-Z, or 0-9
         # per the ASCII Table https://www.asciitable.com
@@ -147,5 +147,5 @@ class defineCog(commands.Cog):
             raise Exception(err_str).with_traceback(err.__traceback__)
 
 
-def setup(bot):
-    bot.add_cog(defineCog(bot))
+async def setup(bot):
+    await bot.add_cog(defineCog(bot))

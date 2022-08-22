@@ -1,4 +1,4 @@
-# ClemBot Contributor Covenant Code of Conduct
+# SockBot Contributor Covenant Code of Conduct
 
 ## Our Pledge
 

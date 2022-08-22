@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import sys
@@ -5,11 +6,10 @@ from datetime import datetime
 from pathlib import Path
 
 import discord
+import bot
 
-from bot.bot_secrets import BotSecrets
-from bot.clem_bot import ClemBot as ClemBot
-from bot.custom_prefix import CustomPrefix
-from bot.messaging.events import Events
+import bot.bot_secrets as bot_secrets
+from bot.sock_bot import SockBot as SockBot
 from bot.messaging.messenger import Messenger
 from bot.utils.scheduler import Scheduler
 
@@ -22,7 +22,7 @@ def setup_logger() -> None:
                         level=logging.INFO, handlers=handlers)
 
 
-def main():
+async def main():
     if not os.path.exists('Logs'):
         os.makedirs('Logs')
     # sets up the logging for discord.py
@@ -42,25 +42,27 @@ def main():
     bot_log.addHandler(bot_file_handle)
 
     # check if this is a prod or a dev instance
-    if bool(os.environ.get('PROD')):
-        bot_log.info('Production env var found, loading production enviroment')
-        BotSecrets.get_instance().load_production_secrets()
+    if bool(os.environ.get("PROD")):
+        bot_log.info("Production env var found, loading production environment")
+        bot_secrets.secrets.load_production_secrets()
     else:
         try:
-            bot_log.info(f'Attempting to load BotSecrets.json from {os.getcwd()}')
+            bot_log.info(f"Attempting to load BotSecrets.json from {os.getcwd()}")
             with open("BotSecrets.json") as f:
-                BotSecrets.get_instance().load_development_secrets(f.read())
+                bot_secrets.secrets.load_development_secrets(f.read())
         except FileNotFoundError as e:
-            bot_log.error(f'{e}: The bot could not find your BotSecrets Json File')
+            bot_log.fatal(f"{e}: The bot could not find your BotSecrets Json File")
             sys.exit(0)
         except KeyError as e:
-            bot_log.error(f'{e} is not a valid key in BotSecrets')
+            bot_log.fatal(f"{e} is not a valid key in BotSecrets")
             sys.exit(0)
         except Exception as e:
-            bot_log.error(e)
+            bot_log.fatal(e)
+            sys.exit(0)
 
     # get the default prefix for the bot instance
-    prefix = BotSecrets.get_instance().bot_prefix
+    prefix = bot_secrets.secrets.bot_prefix
+
 
     # Initialize the messenger here and inject it into the base bot class,
     # this is so it can be reused later on
@@ -68,14 +70,10 @@ def main():
     # E.G a website frontend
     messenger = Messenger(name='primary_bot_messenger')
 
-    # create the custom prefix handler class, and register its methods
-    # as event callbacks
-    custom_prefix = CustomPrefix(default=prefix)
-    messenger.subscribe(Events.on_set_custom_prefix, custom_prefix.set_prefix)
-
     # enable privileged member gateway intents
-    intents = discord.Intents.default()
-    intents.members = True
+    intents = discord.Intents.default()  # pylint: disable=assigning-non-slot
+    intents.members = True  # pylint: disable=assigning-non-slot
+    intents.message_content = True  # pylint: disable=assigning-non-slot
 
     # Create the scheduler for injection into the bot instance
     scheduler = Scheduler()
@@ -84,17 +82,22 @@ def main():
     mentions = discord.AllowedMentions(everyone=False, roles=False)
 
     bot_log.info('Bot Starting Up')
-    ClemBot(
+    client = SockBot(
         messenger=messenger,
         scheduler=scheduler,
-        command_prefix=custom_prefix.get_prefix,  # noqa: E126
+        command_prefix=bot_secrets.secrets.bot_prefix,  # noqa: E126
         help_command=None,
+        activity=discord.Game(name='Run ?help'),
         case_insensitive=True,
         max_messages=50000,
         allowed_mentions=mentions,
         intents=intents
-    ).run(BotSecrets.get_instance().bot_token)
+    )
+
+    async with client:
+        bot_log.info("Bot starting up")
+        await client.start(bot_secrets.secrets.bot_token)
 
 
-if __name__ == '__main__':
-    main()
+if __name__ == "__main__":
+    asyncio.run(main())

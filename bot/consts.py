@@ -5,8 +5,16 @@ class Colors:
     """Hex Color values"""
 
     Error = 0xE20000
-    ClemsonOrange = 0xF56600
+    Purple = 0x522D80
 
+
+class Staff:
+    jayy: 190858129188192257
+    smathep: 216632498015305729
+    emulator: 187974048167362560
+    bren: 274004148276690944
+    vi: 534558685008101409
+    
 
 class DesignatedChannelBase(Enum):
     pass
@@ -37,44 +45,7 @@ class OwnerDesignatedChannels(DesignatedChannelBase):
         return member in OwnerDesignatedChannels.__members__
 
 
-class Claims(Enum):
-    """Represents all possible authorization claims that server roles can have"""
-
-    designated_channel_view = auto()
-    designated_channel_modify = auto()
-    custom_prefix_set = auto()
-    welcome_message_view = auto()
-    welcome_message_modify = auto()
-    tag_add = auto()
-    tag_delete = auto()
-    assignable_roles_add = auto()
-    assignable_roles_delete = auto()
-    delete_message = auto()
-    emote_add = auto()
-    claims_view = auto()
-    claims_modify = auto()
-    manage_class_add = auto()
-    moderation_warn = auto()
-    moderation_ban = auto()
-    moderation_mute = auto()
-    moderation_purge = auto()
-    moderation_infraction_view = auto()
-
-    @staticmethod
-    def get_claims_str():
-        return '\n'.join(name for name, _ in Claims.__members__.items())
-
-
 class DiscordLimits:
     MessageLength = 1900
     EmbedFieldLength = 900
 
-
-class Infractions:
-    mute = 'mute'
-    ban = 'ban'
-    warn = 'warn'
-
-
-class Moderation:
-    mute_role_name = 'ClemBot Mute'

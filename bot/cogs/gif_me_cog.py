@@ -6,7 +6,7 @@ import discord
 import discord.ext.commands as commands
 
 import bot.extensions as ext
-from bot.clem_bot import BotSecrets
+import bot.bot_secrets as bot_secrets
 from bot.consts import Colors
 from bot.messaging.events import Events
 
@@ -26,7 +26,7 @@ class GifMeCog(commands.Cog):
     async def gifme(self, ctx, *args):
 
         params = {
-            "api_key": BotSecrets.get_instance().gif_me_token,
+            "api_key": bot_secrets.BotSecrets.gif_me_token,
             "rating": "PG-13"
         }
 
@@ -39,7 +39,7 @@ class GifMeCog(commands.Cog):
             embed = discord.Embed(title="GifMe", color=Colors.Error)
             embed.add_field(name="Error", value=f"{response_info['status']}: {response_info['msg']}")
         else:
-            embed = discord.Embed(title="GifMe", color=Colors.ClemsonOrange)
+            embed = discord.Embed(title="GifMe", color=Colors.Purple)
             embed.set_image(url=response["data"]["images"]["original"]["url"])
             embed.set_footer(text="Powered by GIPHY")
         msg = await ctx.send(embed=embed)
@@ -49,5 +49,5 @@ class GifMeCog(commands.Cog):
                                          timeout=60)
 
 
-def setup(bot):
-    bot.add_cog(GifMeCog(bot))
+async def setup(bot):
+    await bot.add_cog(GifMeCog(bot))

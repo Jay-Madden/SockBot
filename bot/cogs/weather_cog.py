@@ -357,5 +357,5 @@ class WeatherCog(commands.Cog):
         await self.weatherCode(ctx, location, 1, 1, 1)
 
 
-def setup(bot):
-    bot.add_cog(WeatherCog(bot))
+async def setup(bot):
+    await bot.add_cog(WeatherCog(bot))

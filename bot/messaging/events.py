@@ -32,7 +32,7 @@ class EventsMeta(type):
     @property
     def on_dm_message_received(self):
         """
-        Published whenever a direct message is sent to ClemBot
+        Published whenever a direct message is sent to SockBot
         
         Args:
             message (Message) – The deleted message.
@@ -416,7 +416,7 @@ class EventsMeta(type):
 
     def on_bot_mute(self):
         """
-        Published when a user is warned with clembot
+        Published when a user is warned with SockBot
 
         Args:
             guild (discord.Guild): Guild id where the mute happened
@@ -429,7 +429,7 @@ class EventsMeta(type):
     @property
     def on_bot_unmute(self):
         """
-        Published when a user is unmuted by clembot
+        Published when a user is unmuted by SockBot
 
         Args:
             guild (discord.Guild): Guild id where the unmute happened
@@ -441,7 +441,7 @@ class EventsMeta(type):
     @property
     def on_bot_warn(self):
         """
-        Published when a user is warned with clembot
+        Published when a user is warned with SockBot
 
         Args:
             guild (discord.Guild): Guild id where the warn happened
@@ -454,7 +454,7 @@ class EventsMeta(type):
     @property
     def on_bot_ban(self):
         """
-        Published when a user is banned with clembot
+        Published when a user is banned with SockBot
 
         Args:
             guild (discord.Guild): Guild id where the ban happened
@@ -467,7 +467,7 @@ class EventsMeta(type):
     @property
     def on_member_ban(self):
         """
-        Published when a user is banned with clembot
+        Published when a user is banned with SockBot
 
         Args:
             guild (discord.Guild): Guild id where the ban happened

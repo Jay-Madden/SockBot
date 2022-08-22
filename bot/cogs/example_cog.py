@@ -55,16 +55,8 @@ class ExampleCog(commands.Cog):
             await ctx.send(f'Hello {member.name}... This feels familiar.')
         self._last_member = member
 
-    # temporary placement till i can do it better
-    @ext.command(hidden=True)
-    @commands.has_guild_permissions(administrator=True)
-    async def slowmode(self, ctx, value: int):
-        await ctx.channel.edit(slowmode_delay=value)
-        await ctx.send(f'Slowmode set to {value}')
-
-
 # This is the setup function at the module level, d.py expects this function to
 # load cogs into the library internally
-def setup(bot):
+async def setup(bot):
     # This adds the cog internally by creating a cog instance and registering that
-    bot.add_cog(ExampleCog(bot))
+    await bot.add_cog(ExampleCog(bot))

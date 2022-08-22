@@ -30,7 +30,7 @@ class BaseConverterCog(commands.Cog):
                 number with base prefix examples: [0b11, 99, 0xff, 0o77]
         """
         desc = 'Available Bases Include:\n binary (bin),\n decimal(dec),\n hexadecimal(hex),\n octal(oct)'
-        embed = discord.Embed(title='Available Bases', description=desc, color=Colors.ClemsonOrange)
+        embed = discord.Embed(title='Available Bases', description=desc, color=Colors.Purple)
         await ctx.send(embed=embed)
 
     async def result(self, ctx, number) -> None:
@@ -42,7 +42,7 @@ class BaseConverterCog(commands.Cog):
         attachment = discord.File(filename="Code.gif",
                                   fp="bot/cogs/base_converter/assets/Code.gif")
 
-        embed = discord.Embed(title='Conversions', description=f'Numerical Conversions of {number}', color=Colors.ClemsonOrange)
+        embed = discord.Embed(title='Conversions', description=f'Numerical Conversions of {number}', color=Colors.Purple)
         embed.set_thumbnail(url='attachment://Code.gif')
         embed.add_field(name='Binary', value=b, inline=False)
         embed.add_field(name='Decimal', value=d, inline=False)
@@ -84,5 +84,5 @@ class BaseConverterCog(commands.Cog):
         await self.result(ctx, number)
 
 
-def setup(bot):
-    bot.add_cog(BaseConverterCog(bot))
+async def setup(bot):
+    await bot.add_cog(BaseConverterCog(bot))

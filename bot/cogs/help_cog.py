@@ -9,7 +9,6 @@ from bot.consts import Colors
 from bot.messaging.events import Events
 
 log = logging.getLogger(__name__)
-LINK_URL = 'https://top.gg/bot/710672266245177365'
 HELP_EMBED_SIZE = 15
 
 
@@ -24,21 +23,21 @@ class HelpCog(commands.Cog):
 
         if command_name:
             command = self.find_command(self.bot, command_name)
-            if isinstance(command, ext.ClemBotCommand):
+            if isinstance(command, ext.SockBotCommand):
                 await self.send_command_help(ctx, command)
-            elif isinstance(command, ext.ClemBotGroup):
+            elif isinstance(command, ext.SockBotGroup):
                 await self.send_group_help(ctx, command)
             else:
                 await self.send_default_help(ctx, f'Command: {command_name} not found, here is a list of all my commands')
         else:
             await self.send_default_help(ctx)
 
-    async def send_group_help(self, ctx, command: ext.ClemBotGroup):
+    async def send_group_help(self, ctx, command: ext.SockBotGroup):
         prefix = await self.bot.current_prefix(ctx)
 
         embed = discord.Embed(title=f'```{prefix}{command.qualified_name}```',
                               description=f'for more info on a subcommand run `{prefix}help <SubCommandName>`',
-                              color=Colors.ClemsonOrange)
+                              color=Colors.Purple)
         embed.add_field(name='Description', value=command.long_help or 'No description provided', inline=False)
 
         embed.add_field(
@@ -55,14 +54,14 @@ class HelpCog(commands.Cog):
         com_repr = '\n'.join(self.get_commands_repr(command.commands, f'{prefix}{command.qualified_name} '))
         embed.add_field(name='Subcommands', value=com_repr or 'No example provided', inline=False)
 
-        embed.set_author(name=f'{self.bot.user.name} - Help', url=LINK_URL, icon_url=self.bot.user.avatar_url)
+        embed.set_author(name=f'{self.bot.user.name} - Help', icon_url=self.bot.user.avatar.url)
 
         await ctx.send(embed=embed)
 
-    async def send_command_help(self, ctx, command: ext.ClemBotCommand):
+    async def send_command_help(self, ctx, command: ext.SockBotCommand):
         prefix = await self.bot.current_prefix(ctx)
 
-        embed = discord.Embed(title=f'```{prefix}{command.qualified_name}```', color=Colors.ClemsonOrange)
+        embed = discord.Embed(title=f'```{prefix}{command.qualified_name}```', color=Colors.Purple)
         embed.add_field(name='Description', value=command.long_help or 'No description provided', inline=False)
 
         if command.signature:
@@ -74,7 +73,7 @@ class HelpCog(commands.Cog):
             name='Usage Example',
             value=self.get_example(command.example, prefix) or 'No example provided',
             inline=False)
-        embed.set_author(name=f'{self.bot.user.name} - Help', url=LINK_URL, icon_url=self.bot.user.avatar_url)
+        embed.set_author(name=f'{self.bot.user.name} - Help', icon_url=self.bot.user.avatar.url)
 
         await ctx.send(embed=embed)
 
@@ -92,7 +91,7 @@ class HelpCog(commands.Cog):
         if parent.qualified_name == command_name:
             return parent
 
-        if isinstance(parent, ext.ClemBotGroup):
+        if isinstance(parent, ext.SockBotGroup):
             for c in parent.commands:
                 if result := self.find_command(c, command_name):
                     return result
@@ -109,9 +108,9 @@ class HelpCog(commands.Cog):
             embed = discord.Embed(
                 title=title,
                 description=f'for more info on a command run `{prefix}help <CommandName>`',
-                color=Colors.ClemsonOrange)
+                color=Colors.Purple)
 
-            embed.set_author(name=f'{self.bot.user.name} - Help', url=LINK_URL, icon_url=self.bot.user.avatar_url)
+            embed.set_author(name=f'{self.bot.user.name} - Help', icon_url=self.bot.user.avatar.url)
             embed.add_field(name='Commands', value='\n'.join(command))
 
             cog_embeds.append(embed)
@@ -130,7 +129,7 @@ class HelpCog(commands.Cog):
             if command.hidden:
                 continue
             if not isinstance(command, ext.ExtBase):
-                log.warning(f'Help command invoked but none Clembot ext command found name: {command.name}, skipping command help')
+                log.warning(f'Help command invoked but none SockBot ext command found name: {command.name}, skipping command help')
                 continue
 
             command_help = command.short_help or 'None'
@@ -154,5 +153,5 @@ class HelpCog(commands.Cog):
             yield lst[i:i + n]
 
 
-def setup(bot):
-    bot.add_cog(HelpCog(bot))
+async def setup(bot):
+    await bot.add_cog(HelpCog(bot))

@@ -10,22 +10,17 @@ import discord
 from discord.ext import commands
 
 import bot.cogs as cogs
-import bot.extensions as ext
 import bot.services as services
-from bot.bot_secrets import BotSecrets
-from bot.consts import Colors, DesignatedChannels, OwnerDesignatedChannels
-from bot.data.claims_repository import ClaimsRepository
+from bot.consts import Colors
 from bot.data.database import Database
-from bot.data.logout_repository import LogoutRepository
-from bot.errors import ClaimsAccessError
 from bot.messaging.events import Events
 
 log = logging.getLogger(__name__)
 
 
-class SocBot(commands.Bot):
+class SockBot(commands.Bot):
     """
-    This is the base level bot class for SocBot. 
+    This is the base level bot class for SockBot. 
 
     This handles the sending of all api events
     as well as the dynamic loading of services and cogs
@@ -38,80 +33,36 @@ class SocBot(commands.Bot):
         self.messenger = messenger
         self.scheduler = scheduler
 
-        self._before_invoke = self.command_claims_check
-
-        self.load_cogs()
         self.active_services = {}
 
-    async def on_ready(self) -> None:
+    async def setup_hook(self) -> None:
         """
-        This is the entry point of the bot that is run when discord.py has finished its startup procedures.
+        This is the entry point of the bot that is run after discord.py has finished its startup procedures.
         This is where services are loaded and the startup procedures for each service is run
         """
+        await self.load_cogs()
 
-        await self.change_presence(activity=discord.Game(name='Run !help'))
 
-        await Database(BotSecrets.get_instance().database_name).create_database()
+        await Database().create_database()
+
+    async def on_ready(self) -> None:
         await self.load_services()
 
         # Send the ready event AFTER services have been loaded so that the designated channel service is there
-        embed = discord.Embed(title='Bot Ready', color=Colors.ClemsonOrange)
+        embed = discord.Embed(title='Bot Ready', color=Colors.Purple)
         time = datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
         embed.add_field(name='Startup Time', value=time)
-        embed.set_thumbnail(url=self.user.avatar_url)
-        await self.messenger.publish(Events.on_broadcast_designated_channel, DesignatedChannels.startup_log, embed)
+        embed.set_thumbnail(url=self.user.avatar.url)
 
         log.info(f'Logged on as {self.user}')
-
-    async def command_claims_check(self, ctx: commands.Context):
-        """
-        Before invoke hook to make sure a user has the correct claims to allow a command invocation
-        """
-        command = ctx.command
-        author = ctx.author
-        repo = ClaimsRepository()
-
-        if await self.is_owner(author):
-            # if the author owns the bot, authorize the command no matter what
-            return
-
-        if not isinstance(command, ext.ExtBase):
-            # If the command isnt an extension command let it through, we dont need to think about it
-            return
-
-        if author.guild_permissions.administrator:
-            # Admins have full bot access no matter what
-            return
-
-        if len(command.claims) == 0:
-            # command requires no claims nothing else to do
-            return
-
-        if command.ignore_claims_pre_invoke:
-            # The command is going to check the claims in the command body, nothing else to do
-            return
-
-        claims = await repo.fetch_all_claims_user(author)
-
-        if claims and command.claims_check(claims):
-            # Author has valid claims
-            return
-
-        claims_str = '\n'.join(command.claims)
-        raise ClaimsAccessError(f'Missing claims to run this operation, Need any of the following\n ```\n{claims_str}```'
-                                f'\n **Help:** For more information on how claims work please see the wiki [Link!]('
-                                f'https://github.com/ClemsonCPSC-Discord/ClemBot/wiki/Authorization-Claims)\n'
-                                f'or run the `{await self.current_prefix(ctx.message)}help claims` command')
 
     async def close(self) -> None:
         try:
             log.info('Sending shutdown embed')
-            embed = discord.Embed(title='Bot Shutting down', color=Colors.ClemsonOrange)
+            embed = discord.Embed(title='Bot Shutting down', color=Colors.Purple)
             time = datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
             embed.add_field(name='Shutdown Time', value=time)
-            embed.set_thumbnail(url=self.user.avatar_url)
-            await self.messenger.publish(Events.on_broadcast_designated_channel, DesignatedChannels.startup_log, embed)
-            await LogoutRepository().add_logout_date(datetime.datetime.utcnow())
+            embed.set_thumbnail(url=self.user.avatar.url)
         except Exception as e:
             log.error(f'Logout error embed failed with error {e}')
 
@@ -222,7 +173,7 @@ class SocBot(commands.Bot):
 
         embed = discord.Embed(title=f'ERROR: {type(error).__name__}', color=Colors.Error)
         embed.add_field(name='Exception:', value=error)
-        embed.set_footer(text=self.get_full_name(ctx.author), icon_url=ctx.author.avatar_url)
+        embed.set_footer(text=self.get_full_name(ctx.author), icon_url=ctx.author.avatar.url)
         msg = await ctx.channel.send(embed=embed)
         await self.messenger.publish(Events.on_set_deletable, msg=msg, author=ctx.author)
         await self.global_error_handler(error)
@@ -253,7 +204,6 @@ class SocBot(commands.Bot):
                 field_name = 'Traceback' if i == 0 else 'Continued'
                 embed.add_field(name=field_name, value=f'```{field}```', inline=False)
 
-            await self.messenger.publish(Events.on_broadcast_designated_channel, OwnerDesignatedChannels.error_log, embed)
 
     def get_full_name(self, author) -> str:
         return f'{author.name}#{author.discriminator}'
@@ -283,18 +233,18 @@ class SocBot(commands.Bot):
     async def load_services(self) -> None:
         log.info('Loading Services')
         # self.load_extension("Cogs.manage_classes")
-        for m in ClemBot.walk_modules('services', services):
-            for s in ClemBot.walk_types(m, services.base_service.BaseService):
+        for m in SockBot.walk_modules('services', services):
+            for s in SockBot.walk_types(m, services.base_service.BaseService):
                 if s is not services.base_service.BaseService:
                     await self.activate_service(s)
 
-    def load_cogs(self) -> None:
+    async def load_cogs(self) -> None:
         log.info('Loading Cogs')
         # self.load_extension("Cogs.manage_classes")
-        for m in ClemBot.walk_modules('cogs', cogs):
-            for c in ClemBot.walk_types(m, commands.Cog):
+        for m in SockBot.walk_modules('cogs', cogs):
+            for c in SockBot.walk_types(m, commands.Cog):
                 log.info(f'Loading cog: {c.__module__}')
-                self.load_extension(c.__module__)
+                await self.load_extension(c.__module__)
 
     @staticmethod
     def walk_modules(module: str, pkg: any) -> t.Iterator[ModuleType]:

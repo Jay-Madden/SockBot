@@ -6,7 +6,6 @@ from dateutil.relativedelta import relativedelta
 from discord.ext.commands import Context, Converter
 from discord.ext.commands.errors import ConversionError
 
-from bot.consts import Claims
 from bot.errors import ConversionError
 
 """
@@ -67,15 +66,6 @@ class Duration(DurationDelta):
         except ValueError:
             raise ConversionError(f"`{duration}` results in a datetime outside the supported range.")
 
-
-class ClaimsConverter(Converter):
-    """Convert a given claim string into its enum representation"""
-
-    async def convert(self, ctx: Context, claim: str) -> Claims:
-        try:
-            return Claims.__members__[claim]
-        except KeyError:
-            raise ConversionError(f'`{claim}` is not a valid Claim')
 
 class HonorsConverter(Converter):
     """Sanitize honors argument input for grades_cog"""

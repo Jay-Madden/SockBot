@@ -39,5 +39,5 @@ class OwoCog(commands.Cog):
         return text
 
 
-def setup(bot):
-    bot.add_cog(OwoCog(bot))
+async def setup(bot):
+    await bot.add_cog(OwoCog(bot))

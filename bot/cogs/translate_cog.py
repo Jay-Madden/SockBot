@@ -144,7 +144,7 @@ class TranslateCog(commands.Cog):
                 response = json.loads(await resp.text())
 
         log.info(response[0]['translations'])
-        embed = discord.Embed(title='Translate', color=Colors.ClemsonOrange)
+        embed = discord.Embed(title='Translate', color=Colors.Purple)
         name = 'Translated to ' + LANGUAGE_SHORT_CODE_TO_NAME[response[0]['translations'][0]['to'].lower()]
         embed.add_field(name=name, value=response[0]['translations'][0]['text'], inline=False)
         await ctx.send(embed=embed)
@@ -181,7 +181,7 @@ class TranslateCog(commands.Cog):
 
         log.info(response[0]['detectedLanguage'])
         log.info(response[0]['translations'])
-        embed = discord.Embed(title='Translate', color=Colors.ClemsonOrange)
+        embed = discord.Embed(title='Translate', color=Colors.Purple)
         name = 'Translated to ' + LANGUAGE_SHORT_CODE_TO_NAME[response[0]['translations'][0]['to'].lower()]
         embed.add_field(name=name, value=response[0]['translations'][0]['text'], inline=False)
         embed.add_field(name='Confidence Level:', value=response[0]['detectedLanguage']['score'], inline=True)
@@ -220,5 +220,5 @@ def chunk_list(self, lst, n):
         yield lst[i:i + n]
 
 
-def setup(bot):
-    bot.add_cog(TranslateCog(bot))
+async def setup(bot):
+    await bot.add_cog(TranslateCog(bot))

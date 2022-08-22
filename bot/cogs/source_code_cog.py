@@ -7,7 +7,7 @@ import discord
 import discord.ext.commands as commands
 
 import bot.extensions as ext
-from bot.bot_secrets import BotSecrets
+import bot.bot_secrets as bot_secrets
 from bot.consts import Colors
 from bot.messaging.events import Events
 from bot.utils.displayable_path import DisplayablePath
@@ -30,7 +30,7 @@ class SourceCodeCog(commands.Cog):
         self.bot = bot
         self.bot_files = {}
         self.ignored = ['Logs', 'venv', '__pycache__', 'database', '.git', '.pytest_cache', 'bot_env.env']
-        self.repo_url = BotSecrets.get_instance().github_url
+        self.repo_url = bot_secrets.secrets.github_url
 
         root = os.getcwd()
         root_dir = root.split('/')[-1]
@@ -48,11 +48,11 @@ class SourceCodeCog(commands.Cog):
         """
     )
     @ext.short_help('Links the bots source repo')
-    @ext.example(('source', 'source clem_bot.py'))
+    @ext.example(('source', 'source sock_bot.py'))
     async def source(self, ctx, file: str = None):
         if not file:
             embed = discord.Embed(title='Heres my source repository',
-                                  color=Colors.ClemsonOrange,
+                                  color=Colors.Purple,
                                   description=f'Feel free to contribute :grin:')
             embed.add_field(name='Link', value=f'[Source]({self.repo_url})')
             embed.set_thumbnail(url='https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png')
@@ -63,7 +63,7 @@ class SourceCodeCog(commands.Cog):
         gh_url = f'{self.repo_url}/tree/master{relative_url}'
 
         embed = discord.Embed(title=f'Heres the source for {file}',
-                              color=Colors.ClemsonOrange,
+                              color=Colors.Purple,
                               description=f'Feel free to contribute :grin:')
         embed.add_field(name='Link', value=f'[Source]({gh_url})')
         embed.set_thumbnail(url='https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png')
@@ -194,5 +194,5 @@ class SourceCodeCog(commands.Cog):
         return paths
 
 
-def setup(bot):
-    bot.add_cog(SourceCodeCog(bot))
+async def setup(bot):
+    await bot.add_cog(SourceCodeCog(bot))

@@ -1,4 +1,4 @@
-name: ClemBot Master Deployment
+name: SockBot Master Deployment
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       name:
-        description: 'Manual ClemBot workflow trigger'
+        description: 'Manual SockBot workflow trigger'
         required: true
         default: 'Manual Deployment'
 

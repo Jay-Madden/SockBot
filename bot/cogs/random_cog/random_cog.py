@@ -16,7 +16,6 @@ from bot.messaging.events import Events
 from bot.utils.converters import Duration
 
 log = logging.getLogger(__name__)
-SLOTS_COMMAND_COOLDOWN = 30
 
 
 class RandomCog(commands.Cog):
@@ -34,7 +33,7 @@ class RandomCog(commands.Cog):
 
         random.seed(time.time())
 
-        embed = discord.Embed(title='Coin Flip', color=Colors.ClemsonOrange)
+        embed = discord.Embed(title='Coin Flip', color=Colors.Purple)
 
         heads = discord.File(filename='Heads.jpg',
                              fp='bot/cogs/random_cog/assets/Heads.jpg')
@@ -73,7 +72,7 @@ class RandomCog(commands.Cog):
 
         result = ', '.join(str(random.randint(1, limit)) for r in range(rolls))
 
-        embed = discord.Embed(title='Dice Roller', description=f'{ctx.message.author.mention} rolled **{dice}**', color=Colors.ClemsonOrange)
+        embed = discord.Embed(title='Dice Roller', description=f'{ctx.message.author.mention} rolled **{dice}**', color=Colors.Purple)
         embed.add_field(name='Here are the results of their rolls: ', value=result, inline=False)
         await ctx.send(embed=embed)
 
@@ -106,87 +105,8 @@ class RandomCog(commands.Cog):
             'Outlook not so good.',
             'Very doubtful.'
         ]
-        embed = discord.Embed(title='🎱', description=f'{random.choice(responses)}', color=Colors.ClemsonOrange)
+        embed = discord.Embed(title='🎱', description=f'{random.choice(responses)}', color=Colors.Purple)
         await ctx.send(embed=embed)
-
-    @ext.command(hidden=True)
-    @commands.cooldown(1, SLOTS_COMMAND_COOLDOWN, commands.BucketType.user)
-    @ext.long_help(
-        'A slot machine inside discord with a chance to win fame and fortune'
-    )
-    @ext.short_help('How lucky are you?')
-    @ext.example('slots')
-    async def ogslots(self, ctx):
-
-        emojis = "🍎🍊🍐🍋🍉🍇🍓🍒"
-        a = random.choice(emojis)
-        b = random.choice(emojis)
-        c = random.choice(emojis)
-        blank = '⬜'
-
-        slotset = {a, b, c}
-
-        if (len(slotset) == 1):
-            message = f'{ctx.message.author.mention} won!'
-        elif (len(slotset) == 2):
-            message = f'{ctx.message.author.mention} almost won, 2/3!'
-        else:
-            message = f'{ctx.message.author.mention} lost, no matches.'
-
-        slotstitle = '💎 Slot Machine 💎'
-
-        async def slotsrolling(input, spinstatus, waittime):
-            slotembed = discord.Embed(title=f'{slotstitle}', color=Colors.ClemsonOrange,
-                                      description=f'**{ctx.message.author.name} has rolled the slots**')
-            slotembed.add_field(name=input, value=spinstatus, inline=False)
-            await asyncio.sleep(waittime)
-            return slotembed
-
-        embed = await slotsrolling(f'{blank} | {blank} | {blank}', 'Spinning', 0)
-        msg = await ctx.send(embed=embed)
-
-        embed = await slotsrolling(f'{a} | {blank} | {blank}', 'Spinning', 1)
-        await msg.edit(embed=embed)
-
-        embed = await slotsrolling(f'{a} | {b} | {blank}', 'Spinning', 1)
-        await msg.edit(embed=embed)
-
-        embed = await slotsrolling(f'{a} | {b} | {c}', f'**{message}**', 1)
-        await msg.edit(embed=embed)
-
-    @ext.command()
-    @ext.long_help(
-        'Creates a raffle for giveaways inside discord and picks a random winner from all reactors after a specified time frame'
-    )
-    @ext.short_help('Create giveaways!')
-    @ext.example(('raffle 1h this is fun', 'raffle 1d a whole day raffle!'))
-    async def raffle(self, ctx, time: typing.Optional[Duration] = 5, *, reason):
-        if isinstance(time, datetime):
-            delay_time = (time - datetime.utcnow()).total_seconds()
-        else:
-            delay_time = time
-
-        description = f'Raffle for {reason}\nReact with :tickets: to enter the raffle'
-        embed = discord.Embed(title='RAFFLE', color=Colors.ClemsonOrange, description=description)
-        msg = await ctx.send(embed=embed)
-        await msg.add_reaction('🎟️')
-        await asyncio.sleep(delay_time)
-
-        cache_msg = await ctx.fetch_message(msg.id)
-        for reaction in cache_msg.reactions:
-            if reaction.emoji == '🎟️':
-                if reaction.count == 1:
-                    description += '\n\nNo one entered the raffle :('
-                    embed = discord.Embed(title='RAFFLE', color=Colors.ClemsonOrange, description=description)
-                    await msg.edit(embed=embed)
-                else:
-                    reactors = await reaction.users().flatten()
-                    # remove first user b/c first user is always bot
-                    reactors.pop(0)
-                    winner = random.choice(reactors).name
-                    description += f'\n\n🎉 Winner is {winner} 🎉'
-                    embed = discord.Embed(title='RAFFLE', color=Colors.ClemsonOrange, description=description)
-                    await msg.edit(embed=embed)
 
     @ext.command(aliases=['relevant'])
     @ext.long_help(
@@ -208,5 +128,5 @@ class RandomCog(commands.Cog):
                     await self.bot.messenger.publish(Events.on_set_deletable, msg=msg, author=ctx.author, timeout=60)
 
 
-def setup(bot):
-    bot.add_cog(RandomCog(bot))
+async def setup(bot):
+    await bot.add_cog(RandomCog(bot))

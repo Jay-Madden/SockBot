@@ -43,7 +43,7 @@ class Message:
         elif not isinstance(page, str):
             raise BadArgument(f'Embed or string expected in the paginator service: {type(page)} found')
 
-        embed = discord.Embed(title=self.embed_name, color=Colors.ClemsonOrange)
+        embed = discord.Embed(title=self.embed_name, color=Colors.Purple)
         embed.add_field(name=self.field_title, value=self.pages[self._curr_page_num])
         embed.set_footer(text=f'Page {self.curr_page_num + 1} of {len(self.pages)}')
         return embed
@@ -75,7 +75,7 @@ class PaginateService(BaseService):
         if not all(isinstance(p, str) for p in pages):
             raise BadArgument('All paginate text pages need to be of type string')
 
-        embed = discord.Embed(title=embed_name, color=Colors.ClemsonOrange)
+        embed = discord.Embed(title=embed_name, color=Colors.Purple)
         # set the first page of the embed
         embed.add_field(name=field_title, value=pages[0])
         embed.set_footer(text=f'Page 1 of {len(pages)}')

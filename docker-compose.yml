@@ -1,27 +1,13 @@
 version: "3.7"
 services:
-  snekbox:
-    image: pythondiscord/snekbox:latest
-    init: true
-    ipc: none
-    networks: 
-      - ClemBotNet
-    ports:
-      - "8060:8060"
-    privileged: true
-  clembot:
+  SockBot:
     build: .
     restart: always
     user: root
     depends_on: 
       - snekbox
-    networks: 
-      - ClemBotNet
     env_file: 
       - bot_env.env
     volumes:
-      - ~/database:/ClemBot/database
-      - ~/Logs:/ClemBot/Logs
-    
-networks:
-  ClemBotNet:
+      - ~/database:/SockBot/database
+      - ~/Logs:/SockBot/Logs

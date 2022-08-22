@@ -4,8 +4,6 @@ import typing as t
 
 import discord
 
-from bot.consts import Claims
-from bot.data.claims_repository import ClaimsRepository
 from bot.messaging.events import Events
 from bot.services.base_service import BaseService
 
@@ -61,8 +59,6 @@ class DeleteMessageService(BaseService):
 
         if reaction.emoji != '🗑️' or reaction.message.id not in self.messages:
             return
-        elif await ClaimsRepository().check_claim_user(Claims.delete_message, user):
-            delete = True
         elif user.guild_permissions.administrator:
             delete = True
         elif user.id == self.messages[reaction.message.id]['Author']:

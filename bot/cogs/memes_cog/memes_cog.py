@@ -34,7 +34,7 @@ def pillow_process(args, is_rave, lines_in_text, timestamp):
             w, h = d.textsize(args, fnt)
             # draws the text on to the frame. Tries to center horizontally and tries to go as close to the bottom as possible
             d.text((im.size[0] / 2 - w / 2, im.size[1] - h - (5 * lines_in_text)), args, font=fnt, align='center',
-                   stroke_width=bool(is_rave), stroke_fill=Colors.ClemsonOrange, spacing=6)
+                   stroke_width=bool(is_rave), stroke_fill=Colors.Purple, spacing=6)
             del d
 
             b = io.BytesIO()
@@ -207,9 +207,9 @@ class MemesCog(commands.Cog):
             title='Cash to Cookout Tray Converter',
             description=f'{ctx.message.author.mention} ${money} is approximately {output} cookout trays',
             url=f"https://www.fastfoodmenuprices.com/cookout-prices/",
-            color=Colors.ClemsonOrange)
+            color=Colors.Purple)
         await ctx.send(embed=embed)
 
 
-def setup(bot):
-    bot.add_cog(MemesCog(bot))
+async def setup(bot):
+    await bot.add_cog(MemesCog(bot))

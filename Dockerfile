@@ -1,5 +1,5 @@
 # For more information, please refer to https://aka.ms/vscode-docker-python
-FROM python:3.8-slim-buster
+FROM python:3.10-slim-buster
 
 # Keeps Python from generating .pyc files in the container
 ENV PYTHONDONTWRITEBYTECODE 1
@@ -7,18 +7,20 @@ ENV PYTHONDONTWRITEBYTECODE 1
 # Turns off buffering for easier container logging
 ENV PYTHONUNBUFFERED 1
 
-# Set up and activate virtual environment
-ENV VIRTUAL_ENV "/venv"
-RUN python -m venv $VIRTUAL_ENV
-ENV PATH "$VIRTUAL_ENV/bin:$PATH"
+RUN apt-get update && apt-get install -y git
 
-# Install pip requirements
-ADD requirements.txt .
-RUN python -m pip install -r requirements.txt
+# Install poetry
+RUN python -m pip install poetry
 
-WORKDIR /ClemBot
-ADD . /ClemBot
+# Install dependencies with Poetry
+WORKDIR /SockBot
+ADD pyproject.toml .
+ADD poetry.lock .
 
+RUN poetry config virtualenvs.in-project true
+RUN poetry install --no-dev --no-interaction
+
+ADD . /SockBot
 
 # During debugging, this entry point will be overridden. For more information, please refer to https://aka.ms/vscode-docker-python-debug
-CMD ["python","-m", "bot"]
+CMD ["poetry", "run", "python3", "-m", "bot"]

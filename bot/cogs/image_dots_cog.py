@@ -1,3 +1,4 @@
+"""
 import logging
 import math
 import typing as t
@@ -194,5 +195,6 @@ class DotCog(commands.Cog):
         return await self.todots_helper(ctx, image, device, threshold, inverted)
 
 
-def setup(bot):
-    bot.add_cog(DotCog(bot))
+async def setup(bot):
+    await bot.add_cog(DotCog(bot))
+"""
