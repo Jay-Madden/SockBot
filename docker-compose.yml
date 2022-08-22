@@ -10,4 +10,4 @@ services:
       - bot_env.env
     volumes:
       - ~/database:/SockBot/database
-      - ~/Logs:/SockBot/Logs
+      - ~/SockBot-Logs:/SockBot/Logs
