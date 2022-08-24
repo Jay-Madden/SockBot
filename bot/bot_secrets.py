@@ -181,7 +181,7 @@ class BotSecrets:
         self.merriam_key = os.environ.get("MERRIAM_KEY")  # type: ignore
         self.weather_key = os.environ.get("WEATHER_KEY")  # type: ignore
         self.geocode_key = os.environ.get("GEOCODE_KEY")  # type: ignore
-        self.azure_translate_key = os.environ.get("AZURE_TRANSLATE_KEY  # type: ignore")  # type: ignore
+        self.azure_translate_key = os.environ.get("AZURE_TRANSLATE_KEY")  # type: ignore
 
         log.info("Production keys loaded")
 
