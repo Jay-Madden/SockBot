@@ -181,6 +181,12 @@ class SockBot(commands.Bot):
                 return
         error = getattr(error, 'original', error)
 
+        if isinstance(error, commands.CommandNotFound):
+            # ignore messages which are just ? because a lot of the time people will
+            # do ?? and it's annoying when the bot responds
+            if ctx.message.content.strip("?") == "":
+                return
+
         embed = discord.Embed(title=f'ERROR: {type(error).__name__}', color=Colors.Error)
         embed.add_field(name='Exception:', value=error)
         embed.set_footer(text=self.get_full_name(ctx.author), icon_url=ctx.author.avatar.url)
