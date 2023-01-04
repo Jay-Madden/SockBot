@@ -14,6 +14,7 @@ class Staff:
     emulator: 187974048167362560
     bren: 274004148276690944
     vi: 534558685008101409
+    jacob: 223241609293201408
     
 
 class DesignatedChannelBase(Enum):
