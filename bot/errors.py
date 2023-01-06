@@ -49,4 +49,5 @@ class NoSemesterError(CommandError):
     Raised if a user creates a class when there is no current semester.
     """
 
-    pass
+    def __init__(self, message: str):
+        self.message = message

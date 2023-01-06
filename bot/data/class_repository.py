@@ -3,7 +3,7 @@ import datetime
 import aiosqlite
 
 from bot.data.base_repository import BaseRepository
-from bot.models.class_models import ClassSemester
+from bot.models.class_models import ClassSemester, ClassChannel
 
 FORMAT = '%Y-%m-%d %H:%M:%S'
 
@@ -22,6 +22,26 @@ class ClassRepository(BaseRepository):
                 if semester_start <= current_datetime <= semester_end:
                     return semester
             return None
+
+    async def get_unarchived_classes(self) -> list[ClassChannel]:
+        async with aiosqlite.connect(self.resolved_db_path) as db:
+            cursor = await db.execute("SELECT * FROM ClassChannel WHERE class_archived IS FALSE")
+            return await self.fetcthall_as_class(cursor)
+
+    async def get_semester_classes(self, semester: ClassSemester, unarchived_only: bool = True) -> list[ClassChannel]:
+        statement = 'SELECT * FROM ClassChannel WHERE semester_id = ?' \
+                    + ' AND class_archived IS FALSE' if unarchived_only else ''
+        async with aiosqlite.connect(self.resolved_db_path) as db:
+            cursor = await db.execute(statement, (semester.semester_id,))
+            return await self.fetcthall_as_class(cursor)
+
+    async def search_semester(self, semester_id: str) -> ClassSemester | None:
+        async with aiosqlite.connect(self.resolved_db_path) as db:
+            cursor = await db.execute("SELECT * FROM ClassSemester WHERE semester_id = ?", (semester_id,))
+            return await self.fetcthone_as_class(cursor)
+
+    async def search_class(self, prefix: str, num: int, prof: str) -> ClassChannel | None:
+        pass
 
 
 def strtodt(date: str) -> datetime.datetime:
