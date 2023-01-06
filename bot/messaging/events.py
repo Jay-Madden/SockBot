@@ -475,5 +475,23 @@ class EventsMeta(type):
         """
         return 'on_member_ban'
 
+    @property
+    def on_semester_archive(self):
+        """
+        Published when a semester is manually archived or scheduled to be archived.
+        """
+        return 'on_semester_archive'
+
+    @property
+    def on_class_create(self):
+        """
+        Published when a user tries to create a class.
+
+        Throws:
+            NoSemesterError - Thrown if there is no current semester.
+        """
+        return 'on_class_create'
+
+
 class Events(metaclass=EventsMeta):
     pass

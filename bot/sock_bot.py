@@ -33,7 +33,7 @@ class SockBot(commands.Bot):
 
         self.messenger = messenger
         self.scheduler = scheduler
-
+        self.guild = self.guilds[0]
         self.active_services = {}
 
     async def setup_hook(self) -> None:

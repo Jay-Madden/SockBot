@@ -106,6 +106,7 @@ class ExtBase:
         self.short_help = kwargs.get('short_help') or getattr(func, 'short_help', None)
         self.example = kwargs.get('example') or getattr(func, 'example', None)
 
+
 class SockBotCommand(discord.ext.commands.Command, ExtBase):
 
     def __init__(self, func, **kwargs) -> None:
