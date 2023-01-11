@@ -143,7 +143,7 @@ class ManageClassesCog(commands.Cog):
         await msg.delete(delay=1)
 
         # sync perms with cleanup role
-        # await self.sync_perms(ctx, channel, role)
+        await self.sync_perms(ctx, channel, role)
 
     async def input_class(self, ctx, class_repr: ClassType) -> ClassType | None:
         def input_check(msg: discord.Message) -> bool:
