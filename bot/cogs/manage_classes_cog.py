@@ -135,7 +135,7 @@ class ManageClassesCog(commands.Cog):
         await channel.send(f"Here is your generated class channel {ctx.author.mention}, Good luck!")
 
         # create a class role and mark it as assignable
-        # role = await self.create_role(ctx, class_repr)
+        role = await self.create_role(ctx, class_repr)
 
         # Sleep here to make sure the role has been sent to the database and added
         await asyncio.sleep(0.5)
