@@ -139,6 +139,8 @@ class ManageClassesCog(commands.Cog):
 
         # Sleep here to make sure the role has been sent to the database and added
         await asyncio.sleep(0.5)
+        msg = await ctx.send(f'!role add {role.id}')
+        await msg.delete(delay=1)
 
         # sync perms with cleanup role
         await self.sync_perms(ctx, channel, role)
@@ -151,7 +153,7 @@ class ManageClassesCog(commands.Cog):
         if not class_repr.abbv:
             embed = discord.Embed(
                 title="**New class setup wizard started :white_check_mark:**",
-                color=Colors.ClemsonOrange,
+                color=Colors.Purple,
             )
             avi = ctx.author.display_avatar.url
             embed.set_footer(text=f"{ctx.author} - Time Limit: {TIMEOUT} Seconds", icon_url=avi)
@@ -175,12 +177,12 @@ class ManageClassesCog(commands.Cog):
         else:
             embed = discord.Embed(
                 title="**New class setup wizard started :white_check_mark:**",
-                color=Colors.ClemsonOrange,
+                color=Colors.Purple,
             )
             await ctx.send(embed=embed)
 
         embed = discord.Embed(
-            title=f'Class "{class_repr.abbv}-{class_repr.number}" set', color=Colors.ClemsonOrange
+            title=f'Class "{class_repr.abbv}-{class_repr.number}" set', color=Colors.Purple
         )
         avi = ctx.author.display_avatar.url
         embed.set_footer(text=f"{ctx.author} - Time Limit: {TIMEOUT} Seconds", icon_url=avi)
@@ -202,7 +204,7 @@ class ManageClassesCog(commands.Cog):
             return None
 
         embed = discord.Embed(
-            title=f'Class name: "{class_repr.name}" set', color=Colors.ClemsonOrange
+            title=f'Class name: "{class_repr.name}" set', color=Colors.Purple
         )
         avi = ctx.author.display_avatar.url
         embed.set_footer(text=f"{ctx.author} - Time Limit: {TIMEOUT} Seconds", icon_url=avi)
@@ -234,7 +236,7 @@ class ManageClassesCog(commands.Cog):
             return None
 
         embed = discord.Embed(
-            title=f'Class description: "{class_repr.description}" set', color=Colors.ClemsonOrange
+            title=f'Class description: "{class_repr.description}" set', color=Colors.Purple
         )
         avi = ctx.author.display_avatar.url
         embed.set_footer(text=f"{ctx.author} - Time Limit: {TIMEOUT} Seconds", icon_url=avi)
@@ -257,7 +259,7 @@ class ManageClassesCog(commands.Cog):
 
         embed = discord.Embed(
             title=f'Class and role "{class_repr.role}" created in category "{class_repr.category}" ',
-            color=Colors.ClemsonOrange,
+            color=Colors.Purple,
         )
         embed.add_field(name="**Current values**", value=class_repr)
         await ctx.send(embed=embed)
@@ -323,7 +325,7 @@ class ManageClassesCog(commands.Cog):
 
             # Upon detecting first time user, show embed showing how to use commands
             embed = discord.Embed(
-                title="Welcome to SockBot class management!", color=Colors.ClemsonOrange
+                title="Welcome to SockBot class management!", color=Colors.Purple
             )
             embed.add_field(
                 name="To assign your class year or a specific class, run the command:",
