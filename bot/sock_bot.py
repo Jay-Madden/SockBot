@@ -14,7 +14,6 @@ import bot.cogs as cogs
 import bot.services as services
 from bot.consts import Colors
 from bot.data.database import Database
-from bot.extensions import register_slash_commands
 from bot.messaging.events import Events
 
 log = logging.getLogger(__name__)
@@ -53,7 +52,7 @@ class SockBot(commands.Bot):
 
         # Sync slash commands - this does not sync commands GLOBALLY - just to self.guilds[0]
         log.info('Syncing slash commands...')
-        register_slash_commands(self)
+        self.tree.copy_global_to(guild=self.guild)
         await self.tree.sync(guild=self.guild)
 
         # Send the ready event AFTER services have been loaded so that the designated channel service is there

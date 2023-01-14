@@ -4,12 +4,12 @@ import logging
 
 import discord
 import discord.ext.commands as commands
-from discord.app_commands import command as slash_command
+from discord.app_commands import command as slash_command, Group
 
 import bot.extensions as ext
-from bot.modals.class_modal import ClassModal
+from bot.modals.class_modal import AddClassModal, InsertClassModal
 from bot.sock_bot import SockBot
-from bot.consts import Colors
+from bot.consts import Colors, Staff
 from bot.messaging.events import Events
 from bot.utils.user_choice import UserChoice
 
@@ -68,12 +68,28 @@ class ClassType:
 
 
 class ManageClassesCog(commands.Cog):
+
+    group = Group(name='class', description='Interact with class channels')
+
     def __init__(self, bot: SockBot):
         self.bot = bot
 
-    @slash_command(name='test')
-    async def test(self, inter: discord.Interaction) -> None:
-        await inter.response.send_modal(ClassModal())
+    @group.command(name='add', description='Add a class channel')
+    async def add(self, inter: discord.Interaction, prefix: str | None = None, course_number: int | None = None):
+        if prefix and not 3 <= len(prefix) <= 4:
+            await inter.response.send_message(f'The given prefix `{prefix}` is invalid.', ephemeral=True)
+            return
+        if course_number and not 1000 <= course_number <= 8999:
+            await inter.response.send_message(f'The given course number `{course_number}` is invalid.', ephemeral=True)
+            return
+        await inter.response.send_modal(AddClassModal(prefix, course_number))
+
+    @group.command(name='insert', description='Insert a class channel')
+    async def insert(self, inter: discord.Interaction, channel: discord.TextChannel):
+        if inter.user.id not in Staff:
+            await inter.response.send_message('You do not have the correct permissions.')
+            return
+        await inter.response.send_modal(InsertClassModal(channel))
 
     @ext.group(pass_context=True, aliases=["class"], case_insensitive=True)
     @ext.long_help("Command group for the manage classes functionality")

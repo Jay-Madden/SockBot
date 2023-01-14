@@ -1,14 +1,18 @@
-from discord import Interaction, SelectOption, TextStyle
-from discord.ui import Modal, TextInput, Select
+import discord
+from discord import Interaction, TextStyle
+from discord.ui import Modal, TextInput
 
 
-class ClassModal(Modal):
+class AddClassModal(Modal):
 
-    CPSC = SelectOption(label='Computer Science', value='cpsc', default=True)
-    HCC = SelectOption(label='Human Centered Computing', value='hcc')
-    MATH = SelectOption(label='Mathematics', value='math')
-
-    category = Select(placeholder='Select Class Category', options=[CPSC, HCC, MATH], row=0)
+    category = TextInput(
+        label='Course Major',
+        default='cpsc',
+        placeholder='cpsc',
+        min_length=3,
+        max_length=4,
+        row=0
+    )
     course_number = TextInput(
         label='Course Number',
         placeholder='2120',
@@ -39,9 +43,30 @@ class ClassModal(Modal):
         row=4
     )
 
-    def __init__(self):
-        super().__init__(title='Add Class', timeout=350)
+    def __init__(self, pref: str | None = None, num: int | None = None):
+        super().__init__(title='📔 Add Class', timeout=350)
+        if pref:
+            self.category.default = pref
+        if num:
+            self.course_number.default = str(num)
 
     async def on_submit(self, interaction: Interaction) -> None:
         # correct for error - reject if invalid
+        pass
+
+
+class InsertClassModal(Modal):
+
+    why = TextInput(
+        label='Why?',
+        placeholder='Because...',
+        style=TextStyle.long,
+        max_length=250,
+        required=False
+    )
+
+    def __init__(self, channel: discord.TextChannel) -> None:
+        super().__init__(title=f'Insert #{channel.name}')
+
+    async def on_submit(self, interaction: Interaction) -> None:
         pass
