@@ -21,6 +21,7 @@ class ClassChannel:
     class_professor: str
     class_name: str
     class_archived: bool
+    class_description: str | None
 
 
 @dataclass

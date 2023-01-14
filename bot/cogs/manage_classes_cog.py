@@ -4,8 +4,10 @@ import logging
 
 import discord
 import discord.ext.commands as commands
+from discord.app_commands import command as slash_command
 
 import bot.extensions as ext
+from bot.modals.class_modal import ClassModal
 from bot.sock_bot import SockBot
 from bot.consts import Colors
 from bot.messaging.events import Events
@@ -68,6 +70,10 @@ class ClassType:
 class ManageClassesCog(commands.Cog):
     def __init__(self, bot: SockBot):
         self.bot = bot
+
+    @slash_command(name='test')
+    async def test(self, inter: discord.Interaction) -> None:
+        await inter.response.send_modal(ClassModal())
 
     @ext.group(pass_context=True, aliases=["class"], case_insensitive=True)
     @ext.long_help("Command group for the manage classes functionality")

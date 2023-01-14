@@ -2,8 +2,6 @@ import logging
 
 import aiosqlite
 
-from bot.bot_secrets import BotSecrets
-
 log = logging.getLogger(__name__)
 
 

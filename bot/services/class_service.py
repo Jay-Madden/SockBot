@@ -57,5 +57,5 @@ class ClassService(BaseService):
         if self.semester:
             start_date = strtodt(self.semester.semester_start)
             end_date = strtodt(self.semester.semester_end)
-            self.bot.scheduler.schedule_at(self._refresh_semester(), time=start_date)
-            self.bot.scheduler.schedule_at(self.on_semester_archive(self.semester), time=end_date)
+            self.bot.scheduler.schedule_at(await self._refresh_semester(), time=start_date)
+            self.bot.scheduler.schedule_at(await self.on_semester_archive(self.semester), time=end_date)

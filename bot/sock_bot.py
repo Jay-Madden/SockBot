@@ -9,11 +9,12 @@ from types import ModuleType
 import discord
 from discord.ext import commands
 
+import bot.bot_secrets as bot_secrets
 import bot.cogs as cogs
 import bot.services as services
-import bot.bot_secrets as bot_secrets
 from bot.consts import Colors
 from bot.data.database import Database
+from bot.extensions import register_slash_commands
 from bot.messaging.events import Events
 
 log = logging.getLogger(__name__)
@@ -33,7 +34,7 @@ class SockBot(commands.Bot):
 
         self.messenger = messenger
         self.scheduler = scheduler
-        self.guild = self.guilds[0]
+        self.guild: discord.Guild | None = None
         self.active_services = {}
 
     async def setup_hook(self) -> None:
@@ -46,7 +47,14 @@ class SockBot(commands.Bot):
         await Database().create_database()
 
     async def on_ready(self) -> None:
+        self.guild = self.guilds[0]
+
         await self.load_services()
+
+        # Sync slash commands - this does not sync commands GLOBALLY - just to self.guilds[0]
+        log.info('Syncing slash commands...')
+        register_slash_commands(self)
+        await self.tree.sync(guild=self.guild)
 
         # Send the ready event AFTER services have been loaded so that the designated channel service is there
         embed = discord.Embed(title='Bot Ready', color=Colors.Purple)
@@ -122,7 +130,7 @@ class SockBot(commands.Bot):
 
     async def on_member_remove(self, user):
         await self.publish_with_error(Events.on_user_removed, user)
-    
+
     async def on_member_ban(self, guild, user):
         await self.publish_with_error(Events.on_member_ban, guild, user)
 
@@ -219,7 +227,6 @@ class SockBot(commands.Bot):
             for i, field in enumerate(tb_split):
                 field_name = 'Traceback' if i == 0 else 'Continued'
                 embed.add_field(name=field_name, value=f'```{field}```', inline=False)
-
 
     def get_full_name(self, author) -> str:
         return f'{author.name}#{author.discriminator}'

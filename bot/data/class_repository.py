@@ -1,4 +1,7 @@
+import dataclasses
 import datetime
+from pyclbr import Class
+from typing import TypeVar, Any
 
 import aiosqlite
 
@@ -6,6 +9,7 @@ from bot.data.base_repository import BaseRepository
 from bot.models.class_models import ClassSemester, ClassChannel
 
 FORMAT = '%Y-%m-%d %H:%M:%S'
+T = TypeVar("T", bound=dataclasses.dataclass)
 
 
 class ClassRepository(BaseRepository):
@@ -41,6 +45,20 @@ class ClassRepository(BaseRepository):
             return await self.fetcthone_as_class(cursor)
 
     async def search_class(self, prefix: str, num: int, prof: str) -> ClassChannel | None:
+        async with aiosqlite.connect(self.resolved_db_path) as db:
+            cursor = await db.execute(
+                """ SELECT * FROM ClassChannel 
+                    WHERE class_prefix = ? 
+                    AND class_number = ? 
+                    AND class_professor = ?""", (prefix, num, prof))
+            return await self.fetcthone_as_class(cursor)
+
+    async def insert_class(self, clazz: ClassChannel) -> None:
+        semester = await self.get_current_semester()
+        assert semester is not None
+        async with aiosqlite.connect(self.resolved_db_path) as db:
+            cursor = await db.execute("""INSERT INTO ClassChannel WITH VALUES (?, ?, ?, ?)
+            """)
         pass
 
 
