@@ -479,6 +479,10 @@ class EventsMeta(type):
     def on_semester_archive(self):
         """
         Published when a semester is manually archived or scheduled to be archived.
+
+        Args:
+            inter (discord.Interaction | None): The app command interaction. If null, info will be posted to mod channel
+            semester (bot.models.class_modal.ClassSemester): The semester to archive
         """
         return 'on_semester_archive'
 

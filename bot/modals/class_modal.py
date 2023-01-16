@@ -43,30 +43,23 @@ class AddClassModal(Modal):
         row=4
     )
 
-    def __init__(self, pref: str | None = None, num: int | None = None):
-        super().__init__(title='📔 Add Class', timeout=350)
-        if pref:
-            self.category.default = pref
-        if num:
-            self.course_number.default = str(num)
+    def __init__(self, *, class_data: tuple[str, int] | None = None, channel: discord.TextChannel | None = None):
+        super().__init__(title='📔 Add Class' if not channel else f'Insert #{channel.name}', timeout=350)
+        self._channel = channel
+        if class_data:
+            prefix, num = class_data
+            self.category.default = prefix
+            self.course_number.default = num
+        if channel:
+            split = channel.name.split('-')
+            if len(split) == 3:  # Autofill where possible
+                if 3 <= len(split[0]) <= 4:
+                    self.category.default = split[0]
+                if len(split[1]) == 4 and split[1].isdigit():
+                    self.course_number.default = split[1]
+                self.professor.default = split[2]
 
     async def on_submit(self, interaction: Interaction) -> None:
         # correct for error - reject if invalid
-        pass
 
-
-class InsertClassModal(Modal):
-
-    why = TextInput(
-        label='Why?',
-        placeholder='Because...',
-        style=TextStyle.long,
-        max_length=250,
-        required=False
-    )
-
-    def __init__(self, channel: discord.TextChannel) -> None:
-        super().__init__(title=f'Insert #{channel.name}')
-
-    async def on_submit(self, interaction: Interaction) -> None:
         pass

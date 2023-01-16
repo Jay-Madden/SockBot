@@ -26,7 +26,8 @@ class ClassChannel:
 
 @dataclass
 class ClassPin:
-    post_message_id: int
+    pin_message_id: int
+    original_post_message_id: int
     channel_id: int
     pin_owner: int
     pin_pinned: bool

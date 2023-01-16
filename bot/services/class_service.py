@@ -1,5 +1,6 @@
 import logging
 
+import discord
 from discord import CategoryChannel
 
 from bot.bot_secrets import BotSecrets
@@ -30,7 +31,7 @@ class ClassService(BaseService):
             )
 
     @BaseService.Listener(Events.on_semester_archive)
-    async def on_semester_archive(self, semester: ClassSemester):
+    async def on_semester_archive(self, inter: discord.Interaction | None, semester: ClassSemester):
         if not self.semester:
             log.error('on_semester_archive called while current semester is None')
             return
@@ -38,7 +39,7 @@ class ClassService(BaseService):
         channels = self.repo.get_semester_classes(semester)
 
     async def _refresh_semester(self):
-        self.semester = self.repo.get_current_semester()
+        self.semester = await self.repo.get_current_semester()
         if not self.semester:
             log.error('Refreshing the current semester resulted in None.')
             return
@@ -54,8 +55,9 @@ class ClassService(BaseService):
 
     async def load_service(self):
         self.semester = await self.repo.get_current_semester()
+        log.info(f'Loaded semester: {self.semester}')
         if self.semester:
             start_date = strtodt(self.semester.semester_start)
             end_date = strtodt(self.semester.semester_end)
             self.bot.scheduler.schedule_at(await self._refresh_semester(), time=start_date)
-            self.bot.scheduler.schedule_at(await self.on_semester_archive(self.semester), time=end_date)
+            self.bot.scheduler.schedule_at(await self.on_semester_archive(None, self.semester), time=end_date)

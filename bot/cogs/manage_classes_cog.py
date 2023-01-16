@@ -1,16 +1,19 @@
 import asyncio
-from dataclasses import dataclass
 import logging
+from dataclasses import dataclass
 
 import discord
 import discord.ext.commands as commands
-from discord.app_commands import command as slash_command, Group
+from discord import app_commands
 
 import bot.extensions as ext
-from bot.modals.class_modal import AddClassModal, InsertClassModal
-from bot.sock_bot import SockBot
 from bot.consts import Colors, Staff
+from bot.data.class_repository import ClassRepository, strtodt
 from bot.messaging.events import Events
+from bot.modals.class_modal import AddClassModal
+from bot.models.class_models import ClassSemester
+from bot.sock_bot import SockBot
+from bot.utils.helpers import as_timestamp, error_embed
 from bot.utils.user_choice import UserChoice
 
 log = logging.getLogger(__name__)
@@ -67,29 +70,102 @@ class ClassType:
         """
 
 
-class ManageClassesCog(commands.Cog):
-
-    group = Group(name='class', description='Interact with class channels')
+class ManageClassesCog(commands.GroupCog, name='class'):
 
     def __init__(self, bot: SockBot):
         self.bot = bot
+        self.repo = ClassRepository()
+        super().__init__()
 
-    @group.command(name='add', description='Add a class channel')
+    @app_commands.command(name='add', description='Add a class channel')
     async def add(self, inter: discord.Interaction, prefix: str | None = None, course_number: int | None = None):
+        if not await self.repo.get_current_semester():
+            embed = discord.Embed(title='No Current Semester', color=Colors.Error)
+            embed.description = 'Could not create class: there is no current semester in session.\n' \
+                                'Here is the information for the next upcoming semester.'
+            next_semester = await self.repo.get_next_semester()
+            semester_start = strtodt(next_semester.semester_start)
+            embed.add_field(name='Next Semester', value=next_semester.semester_name)
+            embed.add_field(name='Start Date', value=as_timestamp(semester_start))
+            await inter.response.send_message(embed=embed)
+            return
         if prefix and not 3 <= len(prefix) <= 4:
-            await inter.response.send_message(f'The given prefix `{prefix}` is invalid.', ephemeral=True)
+            embed = error_embed(inter.user, f'The given course prefix `{prefix}` is invalid.')
+            await inter.response.send_message(embed=embed, ephemeral=True)
             return
         if course_number and not 1000 <= course_number <= 8999:
-            await inter.response.send_message(f'The given course number `{course_number}` is invalid.', ephemeral=True)
+            embed = error_embed(inter.user, f'The given course number `{course_number}` is invalid.')
+            await inter.response.send_message(embed=embed, ephemeral=True)
             return
-        await inter.response.send_modal(AddClassModal(prefix, course_number))
+        await inter.response.send_modal(AddClassModal(class_data=(prefix, course_number)))
 
-    @group.command(name='insert', description='Insert a class channel')
+    @app_commands.command(name='insert', description='Insert a class channel')
     async def insert(self, inter: discord.Interaction, channel: discord.TextChannel):
-        if inter.user.id not in Staff:
-            await inter.response.send_message('You do not have the correct permissions.')
+        if not Staff.is_staff(inter.user):
+            embed = error_embed(inter.user, 'You do not have the correct permissions to run this command.')
+            await inter.response.send_message(embed=embed, ephemeral=True)
             return
-        await inter.response.send_modal(InsertClassModal(channel))
+        if not await self.repo.get_current_semester():
+            embed = discord.Embed(title='No Current Semester', color=Colors.Error)
+            embed.description = 'Could not insert class: there is no current semester in session.\n' \
+                                'Here is the information for the next upcoming semester.'
+            next_semester = await self.repo.get_next_semester()
+            semester_start = strtodt(next_semester.semester_start)
+            embed.add_field(name='Next Semester', value=next_semester.semester_name)
+            embed.add_field(name='Start Date', value=as_timestamp(semester_start))
+            await inter.response.send_message(embed=embed)
+            return
+        await inter.response.send_modal(AddClassModal(channel=channel))
+
+    semester_group = app_commands.Group(name='semester', description='Manage or list a semester.')
+
+    @semester_group.command(name='list', description='Get info on the current or next semester.')
+    async def list(self, inter: discord.Interaction):
+        current_semester = await self.repo.get_current_semester()
+        next_semester = await self.repo.get_next_semester()
+        if current_semester:
+            semester_start = strtodt(current_semester.semester_start)
+            semester_end = strtodt(current_semester.semester_end)
+            embed = discord.Embed(title='📔 Current Semester', color=Colors.Purple)
+            embed.description = 'Here is the information for the current semester.'
+            embed.add_field(name='Name', value=current_semester.semester_name, inline=False)
+            embed.add_field(name='Start Date', value=as_timestamp(semester_start))
+            embed.add_field(name='End Date', value=as_timestamp(semester_end))
+            await inter.response.send_message(embed=embed)
+        else:
+            next_semester_start = strtodt(next_semester.semester_start)
+            embed = discord.Embed(title='📔 Next Semester', color=Colors.Purple)
+            embed.description = 'Currently, there is no semester in session.\n' \
+                                'Here is the information for the upcoming semester.'
+            embed.add_field(name='Name', value=next_semester.semester_name)
+            embed.add_field(name='Start Date', value=as_timestamp(next_semester_start))
+            await inter.response.send_message(embed=embed)
+
+    @semester_group.command(name='archive', description='Manually archive a semester.')
+    async def archive(self, inter: discord.Interaction, semester_id: str):
+        if not Staff.is_staff(inter.user):
+            embed = error_embed(inter.user, 'You do not have the correct permissions to run this command.')
+            await inter.response.send_message(embed=embed, ephemeral=True)
+            return
+        semester = self.repo.search_semester(semester_id)
+        if not semester:
+            embed = error_embed(inter.user, f'A semester with the ID `{semester_id}` does not exist.')
+            await inter.response.send_message(embed=embed, ephemeral=True)
+            return
+        await self.bot.messenger.publish(Events.on_semester_archive, inter, semester)
+
+    @app_commands.command(name='pin', description='Open a pin request to have a message pinned')
+    async def pin(self, inter: discord.Interaction):  # TODO: Figure out how this is going to work...
+        pass
+
+    @app_commands.command(name='archive', description='Manually archive a class channel')
+    async def archive(self, inter: discord.Interaction, channel: discord.TextChannel):
+        if not Staff.is_staff(inter.user):
+            embed = error_embed(inter.user, 'You do not have the correct permissions to run this command.')
+            await inter.response.send_message(embed=embed, ephemeral=True)
+            return
+
+        pass
 
     @ext.group(pass_context=True, aliases=["class"], case_insensitive=True)
     @ext.long_help("Command group for the manage classes functionality")
@@ -97,75 +173,75 @@ class ManageClassesCog(commands.Cog):
     async def classes(self, ctx) -> None:
         pass
 
-    @classes.command(pass_context=True, aliases=["create"])
-    @ext.long_help(
-        "Command to initiate the new class creation wizard, optionally takes a "
-        'class name as a parameter E.G "cpsc-1010"'
-    )
-    @ext.short_help("Starts the class creation wizard")
-    @ext.example(("class add", "class add cpsc-1010"))
-    async def add(self, ctx, class_name: str | None = None) -> None:
-        """
-        Command to initiate the new class creation wizard, optionally takes a
-        class name as a parameter E.G "cpsc-1010"
-
-        Args:
-            class_name (str, optional): Formatted class abbreviation and number
-            E.G "cpsc-1010" Defaults to None.
-        """
-
-        class_repr: ClassType | None = ClassType()
-
-        assert class_repr
-        if class_name:
-            # try to parse the class name given, if its not in the correct format split will throw
-            abbv, num = class_name.split("-")
-            class_repr.abbv = abbv
-            class_repr.number = int(num)
-
-        # get the user class input and store it in the dataclass
-        class_repr = await self.input_class(ctx, class_repr=class_repr)
-        if not class_repr:
-            return
-
-        try:
-            # attempt to get the category to add the class too
-            category: discord.CategoryChannel | None = (
-                await commands.converter.CategoryChannelConverter().convert(
-                    ctx, class_repr.category
-                )
-            )
-        except:
-            # the category wasnt found, ask if we want to create one
-            log.info(
-                f"Class creation category {class_repr.category} non existent, Create a new one?"
-            )
-            category = await self.create_category(ctx, class_repr)
-
-            # Finding the category and creating one failed
-        # We cant do anything more, bail out early
-        if not category:
-            embed = discord.Embed(
-                title=f"Error: Category {class_repr.category} not found and not created, Exiting Wizard",
-                color=Colors.Error,
-            )
-            await ctx.send(embed=embed)
-            return
-
-        # Create the class channel in the given category
-        channel = await self.create_channel(category, class_repr)
-        await channel.send(f"Here is your generated class channel {ctx.author.mention}, Good luck!")
-
-        # create a class role and mark it as assignable
-        role = await self.create_role(ctx, class_repr)
-
-        # Sleep here to make sure the role has been sent to the database and added
-        await asyncio.sleep(0.5)
-        msg = await ctx.send(f'!role add {role.id}')
-        await msg.delete(delay=1)
-
-        # sync perms with cleanup role
-        await self.sync_perms(ctx, channel, role)
+    # @classes.command(pass_context=True, aliases=["create"])
+    # @ext.long_help(
+    #     "Command to initiate the new class creation wizard, optionally takes a "
+    #     'class name as a parameter E.G "cpsc-1010"'
+    # )
+    # @ext.short_help("Starts the class creation wizard")
+    # @ext.example(("class add", "class add cpsc-1010"))
+    # async def add(self, ctx, class_name: str | None = None) -> None:
+    #     """
+    #     Command to initiate the new class creation wizard, optionally takes a
+    #     class name as a parameter E.G "cpsc-1010"
+    #
+    #     Args:
+    #         class_name (str, optional): Formatted class abbreviation and number
+    #         E.G "cpsc-1010" Defaults to None.
+    #     """
+    #
+    #     class_repr: ClassType | None = ClassType()
+    #
+    #     assert class_repr
+    #     if class_name:
+    #         # try to parse the class name given, if its not in the correct format split will throw
+    #         abbv, num = class_name.split("-")
+    #         class_repr.abbv = abbv
+    #         class_repr.number = int(num)
+    #
+    #     # get the user class input and store it in the dataclass
+    #     class_repr = await self.input_class(ctx, class_repr=class_repr)
+    #     if not class_repr:
+    #         return
+    #
+    #     try:
+    #         # attempt to get the category to add the class too
+    #         category: discord.CategoryChannel | None = (
+    #             await commands.converter.CategoryChannelConverter().convert(
+    #                 ctx, class_repr.category
+    #             )
+    #         )
+    #     except:
+    #         # the category wasnt found, ask if we want to create one
+    #         log.info(
+    #             f"Class creation category {class_repr.category} non existent, Create a new one?"
+    #         )
+    #         category = await self.create_category(ctx, class_repr)
+    #
+    #         # Finding the category and creating one failed
+    #     # We cant do anything more, bail out early
+    #     if not category:
+    #         embed = discord.Embed(
+    #             title=f"Error: Category {class_repr.category} not found and not created, Exiting Wizard",
+    #             color=Colors.Error,
+    #         )
+    #         await ctx.send(embed=embed)
+    #         return
+    #
+    #     # Create the class channel in the given category
+    #     channel = await self.create_channel(category, class_repr)
+    #     await channel.send(f"Here is your generated class channel {ctx.author.mention}, Good luck!")
+    #
+    #     # create a class role and mark it as assignable
+    #     role = await self.create_role(ctx, class_repr)
+    #
+    #     # Sleep here to make sure the role has been sent to the database and added
+    #     await asyncio.sleep(0.5)
+    #     msg = await ctx.send(f'!role add {role.id}')
+    #     await msg.delete(delay=1)
+    #
+    #     # sync perms with cleanup role
+    #     await self.sync_perms(ctx, channel, role)
 
     async def input_class(self, ctx, class_repr: ClassType) -> ClassType | None:
         def input_check(msg: discord.Message) -> bool:
