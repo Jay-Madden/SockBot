@@ -8,7 +8,7 @@ from discord import app_commands
 
 import bot.extensions as ext
 from bot.consts import Colors, Staff
-from bot.data.class_repository import ClassRepository, strtodt
+from bot.data.class_repository import ClassRepository
 from bot.messaging.events import Events
 from bot.modals.class_modal import AddClassModal
 from bot.sock_bot import SockBot
@@ -82,9 +82,8 @@ class ManageClassesCog(commands.GroupCog, name='class'):
             embed.description = 'Could not create class: there is no current semester in session.\n' \
                                 'Here is the information for the next upcoming semester.'
             next_semester = await self.repo.get_next_semester()
-            semester_start = strtodt(next_semester.semester_start)
             embed.add_field(name='Next Semester', value=next_semester.semester_name)
-            embed.add_field(name='Start Date', value=as_timestamp(semester_start))
+            embed.add_field(name='Start Date', value=as_timestamp(next_semester.start_date()))
             await inter.response.send_message(embed=embed)
             return
         if prefix and not 3 <= len(prefix) <= 4:
@@ -106,9 +105,8 @@ class ManageClassesCog(commands.GroupCog, name='class'):
             embed.description = 'Could not insert class: there is no current semester in session.\n' \
                                 'Here is the information for the next upcoming semester.'
             next_semester = await self.repo.get_next_semester()
-            semester_start = strtodt(next_semester.semester_start)
             embed.add_field(name='Next Semester', value=next_semester.semester_name)
-            embed.add_field(name='Start Date', value=as_timestamp(semester_start))
+            embed.add_field(name='Start Date', value=as_timestamp(next_semester.start_date()))
             await inter.response.send_message(embed=embed)
             return
         await inter.response.send_modal(AddClassModal(channel=channel))
@@ -137,7 +135,7 @@ class ManageClassesCog(commands.GroupCog, name='class'):
             await inter.response.send_message(embed=embed)
 
     @semester_group.command(name='archive', description='Manually archive a semester.')
-    async def archive(self, inter: discord.Interaction, semester_id: str):
+    async def semester_archive(self, inter: discord.Interaction, semester_id: str):
         if not await self._perms_check(inter):
             return
         if not (semester := await self.repo.search_semester(semester_id)):
@@ -147,7 +145,7 @@ class ManageClassesCog(commands.GroupCog, name='class'):
         await self.bot.messenger.publish(Events.on_semester_archive, inter, semester)
 
     @app_commands.command(name='archive', description='Manually archive a class channel.')
-    async def archive(self, inter: discord.Interaction, channel: discord.TextChannel):
+    async def class_archive(self, inter: discord.Interaction, channel: discord.TextChannel):
         if not await self._perms_check(inter):
             return
         if not (class_channel := await self.repo.search_class_by_channel(channel.id)):
