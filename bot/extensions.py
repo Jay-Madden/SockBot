@@ -31,36 +31,6 @@ def command(name=None, cls=None, **attrs):
     return wrapper
 
 
-def slash_command(name: str,
-                  desc: str | None = None,
-                  nsfw: bool = False,
-                  extras: t.Dict[t.Any, t.Any] = None,
-                  cls=None):
-
-    if cls is None:
-        cls = SockBotSlashCommand
-
-    def decorator(func):
-        if isinstance(func, SockBotSlashCommand):
-            raise TypeError('Callback is already a slash command.')
-        instance = cls(name, desc, nsfw, extras)
-        _SLASH_COMMANDS[instance] = func
-        return instance
-
-    return decorator
-
-
-def register_slash_commands(bot) -> None:
-    for cmd, callback in _SLASH_COMMANDS.items():
-        new_cmd = bot.tree.command(
-            name=cmd.name,
-            description=cmd.desc,
-            nsfw=cmd.nsfw,
-            extras=cmd.extras
-        )
-        new_cmd.callback = callback
-
-
 """
 Decorator that enables the chaining of multiple commands
 """
@@ -196,18 +166,3 @@ class SockBotGroup(discord.ext.commands.Group, ExtBase):
             return result
 
         return decorator
-
-
-class SockBotSlashCommand:
-
-    def __init__(self, name: str,
-                 desc: str | None = None,
-                 nsfw: bool = False,
-                 extras: t.Dict[t.Any, t.Any] = None):
-        self.name = name
-        self.desc = desc
-        self.nsfw = nsfw
-        self.extras = extras
-
-
-_SLASH_COMMANDS: dict[SockBotSlashCommand, t.Callable] = {}
