@@ -36,7 +36,7 @@ class ClassService(BaseService):
             log.error('on_semester_archive called while current semester is None')
             return
         category_ids = BotSecrets.class_archive_category_ids
-        channels = self.repo.get_semester_classes(semester)
+        channels = await self.repo.get_semester_classes(semester)
 
     async def _refresh_semester(self):
         self.semester = await self.repo.get_current_semester()
@@ -57,7 +57,11 @@ class ClassService(BaseService):
         self.semester = await self.repo.get_current_semester()
         log.info(f'Loaded semester: {self.semester}')
         if self.semester:
-            start_date = strtodt(self.semester.semester_start)
-            end_date = strtodt(self.semester.semester_end)
-            self.bot.scheduler.schedule_at(await self._refresh_semester(), time=start_date)
-            self.bot.scheduler.schedule_at(await self.on_semester_archive(None, self.semester), time=end_date)
+            self.bot.scheduler.schedule_at(
+                await self.on_semester_archive(None, self.semester),
+                time=self.semester.end_date()
+            )
+        else:
+            next_semester = await self.repo.get_next_semester()
+            assert next_semester is not None
+            self.bot.scheduler.schedule_at(await self._refresh_semester(), time=next_semester.start_date())

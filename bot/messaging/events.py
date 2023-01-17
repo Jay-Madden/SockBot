@@ -481,8 +481,8 @@ class EventsMeta(type):
         Published when a semester is manually archived or scheduled to be archived.
 
         Args:
-            inter (discord.Interaction | None): The app command interaction. If null, info will be posted to mod channel
-            semester (bot.models.class_modal.ClassSemester): The semester to archive
+            inter (discord.Interaction | None): The app command interaction.
+            semester (bot.models.class_models.ClassSemester): The semester to archive.
         """
         return 'on_semester_archive'
 
@@ -495,6 +495,28 @@ class EventsMeta(type):
             NoSemesterError - Thrown if there is no current semester.
         """
         return 'on_class_create'
+
+    @property
+    def on_class_archive(self):
+        """
+        Published when a user archives a class.
+
+        Args:
+            inter (discord.Interaction | None): The app command interaction.
+            class (bot.models.class_models.ClassChannel): The class channel model.
+        """
+        return 'on_class_archive'
+
+    @property
+    def on_pin_request(self):
+        """
+        Published when a user requests to pin a message in a class channel.
+
+        Args:
+            ctx: Cog context.
+            message (discord.Message): The message to make a request for.
+        """
+        return 'on_pin_request'
 
 
 class Events(metaclass=EventsMeta):

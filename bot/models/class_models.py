@@ -1,4 +1,7 @@
 from dataclasses import dataclass
+from datetime import datetime
+
+from bot.utils.helpers import strtodt
 
 
 @dataclass
@@ -7,6 +10,12 @@ class ClassSemester:
     semester_name: str
     semester_start: str
     semester_end: str
+
+    def start_date(self) -> datetime:
+        return strtodt(self.semester_start)
+
+    def end_date(self) -> datetime:
+        return strtodt(self.semester_end)
 
 
 @dataclass
@@ -23,6 +32,12 @@ class ClassChannel:
     class_archived: bool
     class_description: str | None
 
+    def class_code(self) -> str:
+        return f'{self.class_prefix}-{self.class_number}'
+
+    def full_title(self) -> str:
+        return f'{self.class_code()}: {self.class_name}'
+
 
 @dataclass
 class ClassPin:
@@ -30,4 +45,5 @@ class ClassPin:
     original_post_message_id: int
     channel_id: int
     pin_owner: int
+    pin_requester: int
     pin_pinned: bool
