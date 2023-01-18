@@ -29,7 +29,7 @@ class ClassChannel:
     post_message_id: int
     class_professor: str
     class_name: str
-    class_archived: bool
+    class_archived: bool = False
     class_description: str | None = None
 
     @property

@@ -56,7 +56,7 @@ class ClassService(BaseService):
                 categories[category] = MAX_CHANNELS_PER_CATEGORY - len(category.channels)
         return categories
 
-    def _get_or_create_category(self, cls: ClassChannel) -> CategoryChannel:
+    async def _get_or_create_category(self, cls: ClassChannel) -> CategoryChannel:
         """
         Gets or creates a new category channel for a class channel.
         If a new category is created, the passed ClassChannel reference
@@ -68,7 +68,7 @@ class ClassService(BaseService):
                 return category
         return await self.bot.guild.create_category(name=category_name)
 
-    def _get_or_create_role(self, cls: ClassChannel) -> discord.Role:
+    async def _get_or_create_role(self, cls: ClassChannel) -> discord.Role:
         """
         Gets or creates a new role for a class channel.
         If a new role is created, the passed ClassChannel reference
