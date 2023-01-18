@@ -109,6 +109,10 @@ class ManageClassesCog(commands.GroupCog, name='class'):
             embed.add_field(name='Start Date', value=as_timestamp(next_semester.start_date()))
             await inter.response.send_message(embed=embed)
             return
+        if await self.repo.search_class_by_channel(channel):
+            embed = error_embed(inter.user, f'The given channel {channel.mention} is already registered.')
+            await inter.response.send_message(embed=embed, ephemeral=True)
+            return
         await inter.response.send_modal(AddClassModal(channel=channel))
 
     semester_group = app_commands.Group(name='semester', description='Manage or list a semester.')
@@ -156,12 +160,10 @@ class ManageClassesCog(commands.GroupCog, name='class'):
 
     @app_commands.command(name='info', description='Get the class information of a channel.')
     async def info(self, inter: discord.Interaction, channel: discord.TextChannel):
-        if not await self._perms_check(inter):
-            return
         if not (class_channel := await self.repo.search_class_by_channel(channel.id)):
             embed = discord.Embed(title='Class Not Found', color=Colors.Purple)
             embed.description = f'Channel {channel.mention} is not registered as a class.'
-            await inter.response.send_message(embed=embed)
+            await inter.response.send_message(embed=embed, ephemeral=True)
             return
         embed = discord.Embed(title='📔 Class Details', color=Colors.Purple)
         embed.description = f'The channel {channel.mention} is registered as a class.'

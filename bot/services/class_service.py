@@ -7,7 +7,7 @@ from bot.bot_secrets import BotSecrets
 from bot.data.class_repository import ClassRepository, strtodt
 from bot.errors import NoSemesterError
 from bot.messaging.events import Events
-from bot.models.class_models import ClassSemester
+from bot.models.class_models import ClassSemester, ClassChannel
 from bot.services.base_service import BaseService
 from bot.sock_bot import SockBot
 
@@ -46,12 +46,40 @@ class ClassService(BaseService):
         # TODO: Announce that the semester is currently in session?
 
     def _available_archive_slots(self) -> dict[CategoryChannel, int]:
+        """
+        Gets a dictionary of archive category channels and the number of slots available.
+        """
         categories = dict()
         archive_categories = BotSecrets.class_archive_category_ids
         for category in self.bot.guild.categories:
             if category.id in archive_categories:
                 categories[category] = MAX_CHANNELS_PER_CATEGORY - len(category.channels)
         return categories
+
+    def _get_or_create_category(self, cls: ClassChannel) -> CategoryChannel:
+        """
+        Gets or creates a new category channel for a class channel.
+        If a new category is created, the passed ClassChannel reference
+        is NOT updated inside of this method and is not sent to the database.
+        """
+        category_name = cls.intended_category()
+        for category in self.bot.guild.categories:
+            if cls.category_id == category.id:
+                return category
+        return await self.bot.guild.create_category(name=category_name)
+
+    def _get_or_create_role(self, cls: ClassChannel) -> discord.Role:
+        """
+        Gets or creates a new role for a class channel.
+        If a new role is created, the passed ClassChannel reference
+        is updated, but t
+        """
+        if not (role := self.bot.guild.get_role(cls.class_role_id)):
+            return await self.bot.guild.create_role(
+                name=cls.class_code(),
+                mentionable=True
+            )
+        return role
 
     async def load_service(self):
         self.semester = await self.repo.get_current_semester()
