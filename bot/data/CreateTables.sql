@@ -2,6 +2,13 @@
 -- Tables used for the `class` command.
 
 
+-- Represents a guild with classes
+CREATE TABLE IF NOT EXISTS ClassGuild
+(
+    guild_id                    INTEGER     PRIMARY KEY,    -- Discord Guild ID
+    notifications_channel_id    INTEGER     NOT NULL        -- Discord Channel ID (used to send notifications)
+);
+
 -- Represents a class semester
 CREATE TABLE IF NOT EXISTS ClassSemester
 (

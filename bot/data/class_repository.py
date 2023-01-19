@@ -5,7 +5,7 @@ import aiosqlite
 import discord
 
 from bot.data.base_repository import BaseRepository
-from bot.models.class_models import ClassSemester, ClassChannel, ClassPin
+from bot.models.class_models import ClassSemester, ClassChannel, ClassPin, ClassGuild
 from bot.utils.helpers import strtodt
 
 
@@ -127,5 +127,23 @@ class ClassRepository(BaseRepository):
                 return None
             return ClassPin(**dictionary)
 
+    async def get_class_guild(self, guild: Union[int, discord.Guild]) -> ClassGuild | None:
+        """
+        Gets the notifications channel for the given guild.
+        """
+        guild_id = guild if isinstance(guild, int) else guild.id
+        async with aiosqlite.connect(self.resolved_db_path) as db:
+            cursor = await db.execute('SELECT * FROM ClassGuild WHERE guild_id = ?', (guild_id,))
+            dictionary = await self.fetcthone_as_dict(cursor)
+            if not len(dictionary):
+                return None
+            return ClassGuild(**dictionary)
 
-
+    async def set_class_guild(self, class_guild: ClassGuild) -> None:
+        """
+        Sets the notifications channel for the guild in the given class guild object.
+        """
+        async with aiosqlite.connect(self.resolved_db_path) as db:
+            await db.execute('INSERT OR REPLACE INTO ClassGuild VALUES (?, ?)',
+                             (class_guild.guild_id, class_guild.notifications_channel_id))
+            await db.commit()

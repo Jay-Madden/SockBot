@@ -5,6 +5,12 @@ from bot.utils.helpers import strtodt
 
 
 @dataclass
+class ClassGuild:
+    guild_id: int
+    notifications_channel_id: int | None = None
+
+
+@dataclass
 class ClassSemester:
     semester_id: str
     semester_name: str
