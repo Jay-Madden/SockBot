@@ -5,7 +5,7 @@ import aiosqlite
 import discord
 
 from bot.data.base_repository import BaseRepository
-from bot.models.class_models import ClassSemester, ClassChannel, ClassPin, ClassGuild
+from bot.models.class_models import ClassSemester, ClassChannel, ClassPin
 from bot.utils.helpers import strtodt
 
 
@@ -127,23 +127,36 @@ class ClassRepository(BaseRepository):
                 return None
             return ClassPin(**dictionary)
 
-    async def get_class_guild(self, guild: Union[int, discord.Guild]) -> ClassGuild | None:
+    async def delete_class(self, channel: Union[int, ClassChannel]) -> None:
         """
-        Gets the notifications channel for the given guild.
+        Deletes the ClassChannel with the given channel or channel id.
         """
-        guild_id = guild if isinstance(guild, int) else guild.id
+        channel_id = channel if isinstance(channel, int) else channel.channel_id
         async with aiosqlite.connect(self.resolved_db_path) as db:
-            cursor = await db.execute('SELECT * FROM ClassGuild WHERE guild_id = ?', (guild_id,))
-            dictionary = await self.fetcthone_as_dict(cursor)
-            if not len(dictionary):
-                return None
-            return ClassGuild(**dictionary)
-
-    async def set_class_guild(self, class_guild: ClassGuild) -> None:
-        """
-        Sets the notifications channel for the guild in the given class guild object.
-        """
-        async with aiosqlite.connect(self.resolved_db_path) as db:
-            await db.execute('INSERT OR REPLACE INTO ClassGuild VALUES (?, ?)',
-                             (class_guild.guild_id, class_guild.notifications_channel_id))
+            await db.execute('DELETE FROM ClassChannel WHERE channel_id = ?', (channel_id,))
             await db.commit()
+
+    async def update_class(self, cls: ClassChannel) -> None:
+        """
+        Updates the ClassChannel object in the database.
+        Specifically, the following are updated:
+        - semester_id
+        - category_id
+        - class_role_id
+        - post_message_id
+        """
+        async with aiosqlite.connect(self.resolved_db_path) as db:
+            await db.execute('UPDATE ClassChannel SET semester_id = ?, category_id = ?,'
+                             'class_role_id = ?, post_message_id = ? WHERE channel_id = ?',
+                             (cls.semester_id, cls.category_id, cls.class_role_id, cls.post_message_id, cls.channel_id))
+            await db.commit()
+
+    async def set_archived(self, channel: ClassChannel, archived: bool) -> None:
+        """
+        Updates the ClassChannel's class_archived with the given archived.
+        """
+        async with aiosqlite.connect(self.resolved_db_path) as db:
+            await db.execute('UPDATE ClassChannel SET class_archived = ? WHERE channel_id = ?',
+                             (channel.channel_id, archived))
+            await db.commit()
+

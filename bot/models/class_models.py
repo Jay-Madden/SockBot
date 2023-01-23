@@ -5,12 +5,6 @@ from bot.utils.helpers import strtodt
 
 
 @dataclass
-class ClassGuild:
-    guild_id: int
-    notifications_channel_id: int | None = None
-
-
-@dataclass
 class ClassSemester:
     semester_id: str
     semester_name: str
@@ -78,4 +72,4 @@ class ClassPin:
     channel_id: int
     pin_owner: int
     pin_requester: int
-    pin_pinned: bool
+    pin_pinned: bool = False

@@ -20,6 +20,7 @@ class BotSecrets:
         self._startup_log_channel_ids: list[int] | None = None
         self._error_log_channel_ids: list[int] | None = None
         self._class_archive_category_ids: list[int] | None = None
+        self._class_notifs_channel_id: int | None = None
 
     @property
     def bot_token(self) -> str:
@@ -162,6 +163,18 @@ class BotSecrets:
             raise ConfigAccessError("class_archive_category_ids has already been initialized")
         self._class_archive_category_ids = value
 
+    @property
+    def class_notifs_channel_id(self) -> int:
+        if not self._class_notifs_channel_id:
+            raise ConfigAccessError("class_notifs_channel_id has not been initialized")
+        return self._class_notifs_channel_id
+
+    @class_notifs_channel_id.setter
+    def class_notifs_channel_id(self, value: int | None) -> None:
+        if self._class_notifs_channel_id:
+            raise ConfigAccessError("class_notifs_channel_id has already been initialized")
+        self._class_notifs_channel_id = value
+
     def load_development_secrets(self, lines: str) -> None:
         secrets = json.loads(lines)
 
@@ -176,6 +189,7 @@ class BotSecrets:
         self.geocode_key = secrets["GeocodeKey"]
         self.azure_translate_key = secrets["AzureTranslateKey"]
         self.class_archive_category_ids = secrets["ClassArchiveCategoryIds"]
+        self.class_notifs_channel_id = secrets["ClassNotifsChannelId"]
 
         log.info("Bot Secrets Loaded")
 
@@ -199,6 +213,8 @@ class BotSecrets:
         self.class_archive_category_ids = [
             int(n) for n in os.environ.get("CLASS_ARCHIVE_CATEGORY_IDS").split(",")  # type: ignore
         ]
+        self.class_notifs_channel_id = os.environ.get("CLASS_NOTIFS_CHANNEL_ID")  # type: ignore
+
         log.info("Production keys loaded")
 
 

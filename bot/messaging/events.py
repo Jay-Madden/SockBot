@@ -502,8 +502,8 @@ class EventsMeta(type):
         Published when a user archives a class.
 
         Args:
-            inter (discord.Interaction | None): The app command interaction.
             class (bot.models.class_models.ClassChannel): The class channel model.
+            inter (discord.Interaction | None = None): The app command interaction.
         """
         return 'on_class_archive'
 
@@ -517,6 +517,19 @@ class EventsMeta(type):
             message (discord.Message): The message to make a request for.
         """
         return 'on_pin_request'
+
+    @property
+    def on_class_unarchive(self):
+        """
+        Published when a user requests to create a previously-created class.
+
+        Args:
+            inter (discord.Interaction): The app command interaction.
+            pref (str): Class prefix, i.e., CPSC, MATH, HCC
+            num (int): Class number, i.e., 2120, 4910, 3520
+            prof (str): Class professor, i.e., Dean, Widman, Taylor
+        """
+        return 'on_class_unarchive'
 
 
 class Events(metaclass=EventsMeta):

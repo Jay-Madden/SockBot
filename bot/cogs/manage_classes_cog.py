@@ -11,7 +11,6 @@ from bot.consts import Colors, Staff
 from bot.data.class_repository import ClassRepository
 from bot.messaging.events import Events
 from bot.modals.class_modal import AddClassModal
-from bot.models.class_models import ClassGuild
 from bot.sock_bot import SockBot
 from bot.utils.helpers import as_timestamp, error_embed
 from bot.utils.user_choice import UserChoice
@@ -147,6 +146,10 @@ class ManageClassesCog(commands.GroupCog, name='class'):
             embed = error_embed(inter.user, f'A semester with the ID `{semester_id}` does not exist.')
             await inter.response.send_message(embed=embed, ephemeral=True)
             return
+        if len(await self.repo.get_semester_classes(semester)) == 0:
+            embed = error_embed(inter.user, f'No unarchived classes for semester {semester.semester_name}.')
+            await inter.response.send_message(embed=embed, ephemeral=True)
+            return
         await self.bot.messenger.publish(Events.on_semester_archive, inter, semester)
 
     @app_commands.command(name='archive', description='Manually archive a class channel.')
@@ -157,7 +160,11 @@ class ManageClassesCog(commands.GroupCog, name='class'):
             embed = error_embed(inter.user, f'Channel {channel.mention} is not registered as a class.')
             await inter.response.send_message(embed=embed)
             return
-        await self.bot.messenger.publish(Events.on_class_archive, inter, class_channel)
+        if class_channel.class_archived:
+            embed = error_embed(inter.user, f'Channel {channel.mention} is already archived.')
+            await inter.response.send_message(embed=embed)
+            return
+        await self.bot.messenger.publish(Events.on_class_archive, class_channel, inter)
 
     @app_commands.command(name='info', description='Get the class information of a channel.')
     async def info(self, inter: discord.Interaction, channel: discord.TextChannel):
@@ -173,18 +180,6 @@ class ManageClassesCog(commands.GroupCog, name='class'):
         embed.add_field(name='Class Instructor', value=class_channel.class_professor.title())
         embed.add_field(name='Class Semester', value=class_channel.semester_id)
         embed.add_field(name='Archived', value=class_channel.class_archived)
-        await inter.response.send_message(embed=embed)
-
-    @app_commands.command(name='notifications', description='Set a notifications channel for moderation.')
-    async def notifications(self, inter: discord.Interaction, channel: discord.TextChannel):
-        if not await self._perms_check(inter):
-            return
-        class_guild = ClassGuild(guild_id=inter.guild_id, notifications_channel_id=channel.id)
-        await self.repo.set_class_guild(class_guild)
-        embed = discord.Embed(title='📔 Class Notifications', color=Colors.Purple)
-        embed.description = 'Notification settings updated.'
-        embed.add_field(name='Guild', value=inter.guild.name)
-        embed.add_field(name='Notifications Channel', value=channel.mention)
         await inter.response.send_message(embed=embed)
 
     async def _perms_check(self, inter: discord.Interaction) -> bool:
