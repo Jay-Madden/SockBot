@@ -76,8 +76,8 @@ class AddClassModal(Modal):
                     self.course_number.default = split_name[1]
                 self.professor.default = split_name[2].title()
             if len(split_topic) == 2:
-                self.course_title.default = split_topic[0].title()
-                self.course_description.default = split_topic[1]
+                self.course_title.default = split_topic[0].title().strip()
+                self.course_description.default = split_topic[1].strip()
 
     async def on_submit(self, inter: Interaction) -> None:
         # correct for error - reject if invalid
@@ -93,7 +93,12 @@ class AddClassModal(Modal):
             return
         new_class = ClassChannel(class_prefix=self.category.value,
                                  class_name=self.course_title.value,
+                                 # todo
                                  )
+        if self._channel:
+            await self._bot.messenger.publish(Events.on_class_insert, inter, new_class, self._channel)
+        else:
+            await self._bot.messenger.publish(Events.on_class_create, inter, new_class)
 
     async def _search_similar(self, inter: discord.Interaction, prof: str) -> bool:
         similar_class = await self._repo.search_class(self.category.value, int(self.course_number.value), prof)

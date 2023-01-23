@@ -26,6 +26,10 @@ class ClassService(BaseService):
 
         pass
 
+    @BaseService.Listener(Events.on_class_insert)
+    async def on_class_insert(self, inter: discord.Interaction, cls: ClassChannel, channel: discord.TextChannel):
+        pass
+
     @BaseService.Listener(Events.on_semester_archive)
     async def on_semester_archive(self, inter: discord.Interaction | None, semester: ClassSemester):
         channels = await self.repo.get_semester_classes(semester)

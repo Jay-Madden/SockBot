@@ -531,6 +531,18 @@ class EventsMeta(type):
         """
         return 'on_class_unarchive'
 
+    @property
+    def on_class_insert(self):
+        """
+        Published when a user requests an existing channel to be inserted.
+
+        Args:
+            inter (discord.Interaction): The app command interaction.
+            cls (bot.models.class_models.ClassChannel): The class channel to insert.
+            channel (discord.TextChannel): The text channel to pair the class channel with.
+        """
+        return 'on_class_insert'
+
 
 class Events(metaclass=EventsMeta):
     pass

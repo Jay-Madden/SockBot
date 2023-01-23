@@ -94,7 +94,7 @@ class ManageClassesCog(commands.GroupCog, name='class'):
             embed = error_embed(inter.user, f'The given course number `{course_number}` is invalid.')
             await inter.response.send_message(embed=embed, ephemeral=True)
             return
-        await inter.response.send_modal(AddClassModal(class_data=(prefix, course_number)))
+        await inter.response.send_modal(AddClassModal(self.bot, class_data=(prefix, course_number)))
 
     @app_commands.command(name='insert', description='Insert a class channel.')
     async def insert(self, inter: discord.Interaction, channel: discord.TextChannel):
@@ -113,7 +113,7 @@ class ManageClassesCog(commands.GroupCog, name='class'):
             embed = error_embed(inter.user, f'The given channel {channel.mention} is already registered.')
             await inter.response.send_message(embed=embed, ephemeral=True)
             return
-        await inter.response.send_modal(AddClassModal(channel=channel))
+        await inter.response.send_modal(AddClassModal(self.bot, channel=channel))
 
     semester_group = app_commands.Group(name='semester', description='Manage or list a semester.')
 
