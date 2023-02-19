@@ -5,7 +5,7 @@ import aiosqlite
 import discord
 
 from bot.data.base_repository import BaseRepository
-from bot.models.class_models import ClassSemester, ClassChannel, ClassPin
+from bot.models.class_models import ClassSemester, ClassChannel
 from bot.utils.helpers import strtodt
 
 
@@ -57,7 +57,7 @@ class ClassRepository(BaseRepository):
         only fetch the ones that are currently marked as unarchived.
         """
         statement = 'SELECT * FROM ClassChannel WHERE semester_id = ?' \
-                    + ' AND class_archived IS FALSE' if unarchived_only else ''
+                    + ' AND class_archived = FALSE' if unarchived_only else ''
         async with aiosqlite.connect(self.resolved_db_path) as db:
             cursor = await db.execute(statement, (semester.semester_id,))
             return [ClassChannel(**d) for d in await self.fetcthall_as_dict(cursor)]
@@ -93,11 +93,23 @@ class ClassRepository(BaseRepository):
 
     async def search_class_by_channel(self, channel: Union[discord.TextChannel, int]) -> ClassChannel | None:
         """
-        Searches for a registered class given the channel ID or channel itself.
+        Searches for a registered class with the given channel ID or channel itself.
         """
         channel_id = channel if isinstance(channel, int) else channel.id
         async with aiosqlite.connect(self.resolved_db_path) as db:
             cursor = await db.execute('SELECT * FROM ClassChannel WHERE channel_id = ?', (channel_id,))
+            dictionary = await self.fetcthone_as_dict(cursor)
+            if not len(dictionary):
+                return None
+            return ClassChannel(**dictionary)
+
+    async def search_class_by_role(self, role: Union[discord.Role, int]) -> ClassChannel | None:
+        """
+        Searches for a registered class with the given role ID or role itself.
+        """
+        role_id = role if isinstance(role, int) else role.id
+        async with aiosqlite.connect(self.resolved_db_path) as db:
+            cursor = await db.execute('SELECT * FROM ClassChannel WHERE class_role_id = ?', (role_id,))
             dictionary = await self.fetcthone_as_dict(cursor)
             if not len(dictionary):
                 return None
@@ -109,23 +121,11 @@ class ClassRepository(BaseRepository):
         class_archived from the model is not inserted and is instead defaulted to False.
         """
         async with aiosqlite.connect(self.resolved_db_path) as db:
-            await db.execute("INSERT INTO ClassChannel VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            await db.execute("INSERT INTO ClassChannel VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, FALSE)",
                              (cls.channel_id, cls.semester_id, cls.category_id,
                               cls.class_role_id, cls.class_prefix, cls.class_number,
                               cls.post_message_id, cls.class_professor, cls.class_name))
             await db.commit()
-
-    async def get_pin_request(self, pinned_message: Union[int, discord.Message]) -> ClassPin | None:
-        """
-        Searches for a class pin request given the message (to be pinned) ID or message itself.
-        """
-        message_id = pinned_message if isinstance(pinned_message, int) else pinned_message.id
-        async with aiosqlite.connect(self.resolved_db_path) as db:
-            cursor = await db.execute('SELECT * FROM ClassPin WHERE original_post_message_id = ?', (message_id,))
-            dictionary = await self.fetcthone_as_dict(cursor)
-            if not len(dictionary):
-                return None
-            return ClassPin(**dictionary)
 
     async def delete_class(self, channel: Union[int, ClassChannel]) -> None:
         """
@@ -157,6 +157,5 @@ class ClassRepository(BaseRepository):
         """
         async with aiosqlite.connect(self.resolved_db_path) as db:
             await db.execute('UPDATE ClassChannel SET class_archived = ? WHERE channel_id = ?',
-                             (channel.channel_id, archived))
+                             (archived, channel.channel_id))
             await db.commit()
-

@@ -19,37 +19,11 @@ class ClassSemester:
 
 
 @dataclass
-class ClassChannel:
-    channel_id: int
-    semester_id: str
-    category_id: int
-    class_role_id: int
+class ClassChannelScaffold:
     class_prefix: str
     class_number: int
-    post_message_id: int
     class_professor: str
     class_name: str
-    class_archived: bool = False
-    class_description: str | None = None
-
-    @property
-    def class_professor(self) -> str:
-        return self.class_professor
-
-    @class_professor.setter
-    def class_professor(self, value: str) -> None:
-        if len(split := value.split(' ')) > 1:
-            self.class_professor = split[-1].title()
-        else:
-            self.class_professor = value.title()
-
-    @property
-    def class_name(self) -> str:
-        return self.class_name
-
-    @class_name.setter
-    def class_name(self, value: str) -> None:
-        self.class_name = value.title()
 
     def class_code(self) -> str:
         return f'{self.class_prefix}-{self.class_number}'
@@ -63,6 +37,16 @@ class ClassChannel:
     def intended_category(self) -> str:
         level = (self.class_number // 1000) * 1000
         return f'{self.class_prefix} {level} LEVELS'
+
+
+@dataclass
+class ClassChannel(ClassChannelScaffold):
+    channel_id: int
+    semester_id: str
+    category_id: int
+    class_role_id: int
+    post_message_id: int | None = None
+    class_archived: bool = False
 
 
 @dataclass

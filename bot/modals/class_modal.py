@@ -7,7 +7,7 @@ from discord.ui import Modal, TextInput
 from bot.consts import Colors
 from bot.data.class_repository import ClassRepository
 from bot.messaging.events import Events
-from bot.models.class_models import ClassChannel
+from bot.models.class_models import ClassChannelScaffold
 from bot.sock_bot import SockBot
 from bot.utils.helpers import error_embed
 
@@ -84,29 +84,33 @@ class AddClassModal(Modal):
         if not self.course_number.value.isdigit():
             embed = error_embed(inter.user, f'Course number `{self.course_number.value}` is invalid.')
             await inter.response.send_message(embed=embed, ephemeral=True)
-        professor: str
-        if len(self.professor.value.split(' ')) > 1:
-            professor = self.professor.value.split(' ')[-1]
-        else:
-            professor = self.professor.value
-        if self._search_similar(inter, professor):
+        # format our data correctly
+        professor = self.professor.value.split(' ')[-1].title()
+        title = self.course_title.value.title()
+        prefix = self.category.value.upper()
+        description = self.course_description.value.capitalize()
+        # check if a similar class exists
+        if await self._search_similar(inter, professor):
             return
-        new_class = ClassChannel(class_prefix=self.category.value,
-                                 class_name=self.course_title.value,
-                                 # todo
-                                 )
+        # create a new class channel scaffold to send to the service
+        scaffold = ClassChannelScaffold(class_prefix=prefix,
+                                        class_name=title,
+                                        class_number=int(self.course_number.value),
+                                        class_professor=professor)
         if self._channel:
-            await self._bot.messenger.publish(Events.on_class_insert, inter, new_class, self._channel)
+            await self._bot.messenger.publish(Events.on_class_insert, inter, scaffold, self._channel, description)
         else:
-            await self._bot.messenger.publish(Events.on_class_create, inter, new_class)
+            await self._bot.messenger.publish(Events.on_class_create, inter, scaffold, description)
 
     async def _search_similar(self, inter: discord.Interaction, prof: str) -> bool:
         similar_class = await self._repo.search_class(self.category.value, int(self.course_number.value), prof)
+        if not similar_class:
+            return False
         channel = self._bot.guild.get_channel(similar_class.channel_id)
         if similar_class and channel and not similar_class.class_archived:
             if role := self._bot.guild.get_role(similar_class.class_role_id):
                 await inter.user.add_roles(role)
-            embed = discord.Embed(title='Similar Course Found', color=Colors.Purple)
+            embed = discord.Embed(title='📔 Similar Course Found', color=Colors.Purple)
             embed.description = f'A similar course has been found.'
             if role:
                 embed.description += f'\nThe {role.mention} role has been added to you.'
