@@ -45,7 +45,7 @@ class ClassChannel(ClassChannelScaffold):
     semester_id: str
     category_id: int
     class_role_id: int
-    post_message_id: int | None = None
+    post_message_id: int | None
     class_archived: bool = False
 
 

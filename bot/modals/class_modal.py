@@ -90,7 +90,7 @@ class AddClassModal(Modal):
         prefix = self.category.value.upper()
         description = self.course_description.value.capitalize()
         # check if a similar class exists
-        if await self._search_similar(inter, professor):
+        if await self._search_similar(inter, prefix, int(self.course_number.value), professor):
             return
         # create a new class channel scaffold to send to the service
         scaffold = ClassChannelScaffold(class_prefix=prefix,
@@ -102,24 +102,24 @@ class AddClassModal(Modal):
         else:
             await self._bot.messenger.publish(Events.on_class_create, inter, scaffold, description)
 
-    async def _search_similar(self, inter: discord.Interaction, prof: str) -> bool:
-        similar_class = await self._repo.search_class(self.category.value, int(self.course_number.value), prof)
+    async def _search_similar(self, inter: discord.Interaction, pref: str, num: int, prof: str) -> bool:
+        similar_class = await self._repo.search_class(pref, num, prof)
         if not similar_class:
             return False
         channel = self._bot.guild.get_channel(similar_class.channel_id)
-        if similar_class and channel and not similar_class.class_archived:
+        if channel and not similar_class.class_archived:
             if role := self._bot.guild.get_role(similar_class.class_role_id):
                 await inter.user.add_roles(role)
-            embed = discord.Embed(title='📔 Similar Course Found', color=Colors.Purple)
-            embed.description = f'A similar course has been found.'
+            embed = discord.Embed(title='📔 Similar Class Found', color=Colors.Purple)
+            embed.description = f'A similar class channel has been found.'
             if role:
                 embed.description += f'\nThe {role.mention} role has been added to you.'
             embed.add_field(name='Channel', value=channel.mention)
-            embed.add_field(name='Course Name', value=similar_class.full_title())
-            embed.add_field(name='Course Instructor', value=similar_class.class_professor)
+            embed.add_field(name='Class Instructor', value=similar_class.class_professor)
+            embed.add_field(name='Class Name', value=similar_class.full_title(), inline=False)
             await inter.response.send_message(embed=embed)
             return True
-        if similar_class and channel:
+        if channel and similar_class.class_archived:
             await self._bot.messenger.publish(Events.on_class_unarchive, inter, similar_class)
             return True
         return False

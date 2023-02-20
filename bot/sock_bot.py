@@ -155,14 +155,14 @@ class SockBot(commands.Bot):
             await self.publish_with_error(Events.on_reaction_add, reaction, user)
 
     async def on_raw_reaction_add(self, reaction) -> None:
-        log.info(f'Reaction by {reaction.member.display_name} on message:{reaction.message_id}')
+        log.info(f'Reaction by {reaction.user_id} on message: {reaction.message_id}')
 
     async def on_reaction_remove(self, reaction: discord.Reaction, user: t.Union[discord.User, discord.Member]):
         if user.id != self.user.id:
             await self.publish_with_error(Events.on_reaction_remove, reaction, user)
 
     async def on_raw_reaction_remove(self, reaction) -> None:
-        log.info(f'Reaction by {reaction.member.display_name} on message:{reaction.message_id}')
+        log.info(f'Reaction by {reaction.user_id} on message: {reaction.message_id}')
 
     async def on_member_update(self, before, after):
         await self.publish_with_error(Events.on_member_update, before, after)
@@ -196,7 +196,7 @@ class SockBot(commands.Bot):
 
         embed = discord.Embed(title=f'ERROR: {type(error).__name__}', color=Colors.Error)
         embed.add_field(name='Exception:', value=error)
-        embed.set_footer(text=self.get_full_name(ctx.author), icon_url=ctx.author.avatar.url)
+        embed.set_footer(text=str(ctx.author), icon_url=ctx.author.avatar.url)
         msg = await ctx.channel.send(embed=embed)
         await self.messenger.publish(Events.on_set_deletable, msg=msg, author=ctx.author)
         await self.global_error_handler(error)
@@ -226,9 +226,6 @@ class SockBot(commands.Bot):
             for i, field in enumerate(tb_split):
                 field_name = 'Traceback' if i == 0 else 'Continued'
                 embed.add_field(name=field_name, value=f'```{field}```', inline=False)
-
-    def get_full_name(self, author) -> str:
-        return f'{author.name}#{author.discriminator}'
 
     async def current_prefix(self, ctx):
         prefixes = await self.get_prefix(ctx)
