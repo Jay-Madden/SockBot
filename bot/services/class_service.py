@@ -57,16 +57,17 @@ class ClassService(BaseService):
                               inter: discord.Interaction,
                               cls: ClassChannelScaffold,
                               channel: discord.TextChannel,
+                              role: discord.Role | None = None,
                               desc: str | None = None):
         if not (semester := await self._check_semester(inter)):
             return
         await inter.response.defer(thinking=True)
         # create and assign what we couldn't in the class channel scaffold
         category = await self._get_or_create_category(cls)
-        role = await self._get_or_create_role(cls)
+        class_role = role if role else await self._get_or_create_role(cls)
         class_channel = ClassChannel(cls.class_prefix, cls.class_number, cls.class_professor,
                                      cls.class_name, channel.id, semester.semester_id,
-                                     category.id, role.id, post_message_id=None)
+                                     category.id, class_role.id, post_message_id=None)
         # move, sort, sync permissions, and push the new class to the repo
         await channel.edit(name=cls.channel_name(), topic=f'{cls.class_name} - {desc}')
         await self._move_and_sort(category, channel)
@@ -76,10 +77,11 @@ class ClassService(BaseService):
         # send notifications and interaction embed
         embed = discord.Embed(title='📔 Class Inserted', color=Colors.Purple)
         embed.description = f'The channel {channel.mention} has been inserted as a class.'
+        embed.description += f'\nThe role {role.mention} has been set as the class role.' if role else ''
         embed.add_field(name='Class Title', value=cls.full_title(), inline=False)
         embed.add_field(name='Semester', value=semester.semester_name)
         embed.add_field(name='Instructor', value=cls.class_professor)
-        embed.add_field(name='Inserted By', value=inter.user.mention, inline=False)
+        embed.add_field(name='Inserted By', value=inter.user.mention,)
         await self._get_notifs_channel().send(embed=embed)
         await inter.followup.send(embed=embed)
 
@@ -160,7 +162,7 @@ class ClassService(BaseService):
         embed.add_field(name='Class Title', value=cls.full_title(), inline=False)
         embed.add_field(name='Semester', value=semester.semester_name)
         embed.add_field(name='Instructor', value=cls.class_professor)
-        embed.add_field(name='Unarchived By', value=inter.user.mention, inline=False)
+        embed.add_field(name='Unarchived By', value=inter.user.mention)
         await inter.followup.send(embed=embed)
         await self._get_notifs_channel().send(embed=embed)
 
@@ -282,7 +284,7 @@ class ClassService(BaseService):
             return
         await channel.set_permissions(role, view_channel=True)
         await channel.set_permissions(cleanup, view_channel=False)
-        await role.edit(position=3)
+        await role.edit(mentionable=True, position=3)
         await cleanup.edit(position=2)
 
     async def _get_or_create_cleanup(self) -> discord.Role:

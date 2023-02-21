@@ -42,12 +42,3 @@ class ConversionError(CommandError):
 
     def __init__(self, message):
         self.message = message
-
-
-class NoSemesterError(CommandError):
-    """
-    Raised if a user creates a class when there is no current semester.
-    """
-
-    def __init__(self, message: str):
-        self.message = message

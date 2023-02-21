@@ -481,8 +481,8 @@ class EventsMeta(type):
         Published when a semester is manually archived or scheduled to be archived.
 
         Args:
-            inter (discord.Interaction | None): The app command interaction.
             semester (bot.models.class_models.ClassSemester): The semester to archive.
+            inter (discord.Interaction | None = None): The app command interaction.
         """
         return 'on_semester_archive'
 
@@ -491,8 +491,10 @@ class EventsMeta(type):
         """
         Published when a user tries to create a class.
 
-        Throws:
-            NoSemesterError - Thrown if there is no current semester.
+        Args:
+            inter (discord.Interaction): The app command interaction.
+            cls (bot.models.class_models.ClassChannelScaffold): The class channel scaffolding.
+            desc (str | None = None): The optional class description.
         """
         return 'on_class_create'
 
@@ -525,9 +527,7 @@ class EventsMeta(type):
 
         Args:
             inter (discord.Interaction): The app command interaction.
-            pref (str): Class prefix, i.e., CPSC, MATH, HCC
-            num (int): Class number, i.e., 2120, 4910, 3520
-            prof (str): Class professor, i.e., Dean, Widman, Taylor
+            cls (bot.models.class_models.ClassChannel): The class channel to unarchive.
         """
         return 'on_class_unarchive'
 
@@ -540,6 +540,8 @@ class EventsMeta(type):
             inter (discord.Interaction): The app command interaction.
             cls (bot.models.class_models.ClassChannel): The class channel to insert.
             channel (discord.TextChannel): The text channel to pair the class channel with.
+            role (discord.Role | None = None): The optional role to insert with the class.
+            desc (str | None = None): The optional channel description.
         """
         return 'on_class_insert'
 

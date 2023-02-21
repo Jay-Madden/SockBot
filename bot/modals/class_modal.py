@@ -70,9 +70,11 @@ class AddClassModal(Modal):
     def __init__(self, bot: SockBot,
                  *,
                  class_data: tuple[str, int] | None = None,
-                 channel: discord.TextChannel | None = None):
+                 channel: discord.TextChannel | None = None,
+                 role: discord.Role | None = None):
         super().__init__(title='📔 Add Class' if not channel else f'Insert #{channel.name}')
         self._bot = bot
+        self._role = role
         self._channel = channel
         self._repo = ClassRepository()
         if class_data or channel:
@@ -99,7 +101,9 @@ class AddClassModal(Modal):
                                         class_number=number,
                                         class_professor=professor)
         if self._channel:
-            await self._bot.messenger.publish(Events.on_class_insert, inter, scaffold, self._channel, description)
+            await self._bot.messenger.publish(
+                Events.on_class_insert, inter, scaffold, self._channel, self._role, description
+            )
         else:
             await self._bot.messenger.publish(Events.on_class_create, inter, scaffold, description)
 
