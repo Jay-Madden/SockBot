@@ -20,7 +20,7 @@ MAX_TITLE_LEN = 50
 # Min and max of class instructor, i.e., 'Dean', 'Widman', 'VanScoy', etc.
 MIN_INSTR_LEN = 2
 MAX_INSTR_LEN = 15
-# Min and max of class description, i.e., 'Students learn about...'
+# Max length of class description, i.e., 'Students learn about...'
 MAX_DESCR_LEN = 500
 # Min and max of class number, i.e., 1060, 4910, 8400, etc.
 MIN_CLASS_NUM = 1000
