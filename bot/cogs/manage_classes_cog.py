@@ -7,7 +7,7 @@ from discord import app_commands
 from bot.consts import Colors, Staff
 from bot.data.class_repository import ClassRepository
 from bot.messaging.events import Events
-from bot.modals.class_modal import AddClassModal
+from bot.modals.class_modal import AddClassModal, valid_course_num, valid_course_maj
 from bot.sock_bot import SockBot
 from bot.utils.helpers import as_timestamp, error_embed
 
@@ -34,11 +34,11 @@ class ManageClassesCog(commands.GroupCog, name='class'):
             await inter.response.send_message(embed=embed)
             return
         # validate our given prefix and course number, if given
-        if prefix and not 3 <= len(prefix) <= 4:
+        if prefix and not valid_course_maj(prefix):
             embed = error_embed(inter.user, f'The given course prefix `{prefix}` is invalid.')
             await inter.response.send_message(embed=embed, ephemeral=True)
             return
-        if course_number and not 1000 <= course_number <= 8999:
+        if course_number and not valid_course_num(course_number):
             embed = error_embed(inter.user, f'The given course number `{course_number}` is invalid.')
             await inter.response.send_message(embed=embed, ephemeral=True)
             return
@@ -65,46 +65,6 @@ class ManageClassesCog(commands.GroupCog, name='class'):
             await inter.response.send_message(embed=embed, ephemeral=True)
             return
         await inter.response.send_modal(AddClassModal(self.bot, channel=channel))
-
-    semester_group = app_commands.Group(name='semester', description='Manage or list a semester.')
-
-    @semester_group.command(name='list', description='Get info on the current or next semester.')
-    async def list(self, inter: discord.Interaction):
-        current_semester = await self.repo.get_current_semester()
-        next_semester = await self.repo.get_next_semester()
-        if current_semester:
-            embed = discord.Embed(title='📔 Current Semester', color=Colors.Purple)
-            embed.description = 'Here is the information for the current semester.'
-            embed.add_field(name='Name', value=current_semester.semester_name, inline=False)
-            embed.add_field(name='Start Date', value=as_timestamp(current_semester.start_date()))
-            embed.add_field(name='End Date', value=as_timestamp(current_semester.end_date()))
-            embed.set_footer(text='Start and end dates do not reflect the actual start and end of a semester.')
-            await inter.response.send_message(embed=embed)
-        else:
-            embed = discord.Embed(title='📔 Next Semester', color=Colors.Purple)
-            embed.description = 'Currently, there is no semester in session.\n' \
-                                'Here is the information for the upcoming semester.'
-            embed.add_field(name='Name', value=next_semester.semester_name)
-            embed.add_field(name='Start Date', value=as_timestamp(next_semester.start_date()))
-            embed.set_footer(text='Start and end dates do not reflect the actual start and end of a semester.')
-            await inter.response.send_message(embed=embed)
-
-    @semester_group.command(name='archive', description='Manually archive a semester.')
-    async def semester_archive(self, inter: discord.Interaction, semester_id: str):
-        # check perms
-        if not await self._perms_check(inter):
-            return
-        # check if the semester id is valid and the semester exists
-        if not (semester := await self.repo.search_semester(semester_id)):
-            embed = error_embed(inter.user, f'A semester with the ID `{semester_id}` does not exist.')
-            await inter.response.send_message(embed=embed, ephemeral=True)
-            return
-        # make sure there are class channels to archive for that semester
-        if len(await self.repo.get_semester_classes(semester)) == 0:
-            embed = error_embed(inter.user, f'No unarchived classes for semester {semester.semester_name}.')
-            await inter.response.send_message(embed=embed, ephemeral=True)
-            return
-        await self.bot.messenger.publish(Events.on_semester_archive, semester, inter)
 
     @app_commands.command(name='archive', description='Manually archive a class channel.')
     async def class_archive(self, inter: discord.Interaction, channel: discord.TextChannel):
@@ -160,6 +120,46 @@ class ManageClassesCog(commands.GroupCog, name='class'):
         embed.add_field(name='Class Semester', value=class_channel.semester_id)
         embed.add_field(name='Archived', value=bool(class_channel.class_archived))
         await inter.response.send_message(embed=embed)
+
+    semester_group = app_commands.Group(name='semester', description='Manage or list a semester.')
+
+    @semester_group.command(name='list', description='Get info on the current or next semester.')
+    async def list(self, inter: discord.Interaction):
+        current_semester = await self.repo.get_current_semester()
+        next_semester = await self.repo.get_next_semester()
+        if current_semester:
+            embed = discord.Embed(title='📔 Current Semester', color=Colors.Purple)
+            embed.description = 'Here is the information for the current semester.'
+            embed.add_field(name='Name', value=current_semester.semester_name, inline=False)
+            embed.add_field(name='Start Date', value=as_timestamp(current_semester.start_date()))
+            embed.add_field(name='End Date', value=as_timestamp(current_semester.end_date()))
+            embed.set_footer(text='Start and end dates do not reflect the actual start and end of a semester.')
+            await inter.response.send_message(embed=embed)
+        else:
+            embed = discord.Embed(title='📔 Next Semester', color=Colors.Purple)
+            embed.description = 'Currently, there is no semester in session.\n' \
+                                'Here is the information for the upcoming semester.'
+            embed.add_field(name='Name', value=next_semester.semester_name)
+            embed.add_field(name='Start Date', value=as_timestamp(next_semester.start_date()))
+            embed.set_footer(text='Start and end dates do not reflect the actual start and end of a semester.')
+            await inter.response.send_message(embed=embed)
+
+    @semester_group.command(name='archive', description='Manually archive a semester.')
+    async def semester_archive(self, inter: discord.Interaction, semester_id: str):
+        # check perms
+        if not await self._perms_check(inter):
+            return
+        # check if the semester id is valid and the semester exists
+        if not (semester := await self.repo.search_semester(semester_id)):
+            embed = error_embed(inter.user, f'A semester with the ID `{semester_id}` does not exist.')
+            await inter.response.send_message(embed=embed, ephemeral=True)
+            return
+        # make sure there are class channels to archive for that semester
+        if len(await self.repo.get_semester_classes(semester)) == 0:
+            embed = error_embed(inter.user, f'No unarchived classes for semester {semester.semester_name}.')
+            await inter.response.send_message(embed=embed, ephemeral=True)
+            return
+        await self.bot.messenger.publish(Events.on_semester_archive, semester, inter)
 
     async def _perms_check(self, inter: discord.Interaction) -> bool:
         if not Staff.is_staff(inter.user):

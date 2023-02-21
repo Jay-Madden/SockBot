@@ -21,6 +21,9 @@ class Staff(Enum):
 
     @staticmethod
     def is_staff(user: typing.Union[discord.User, discord.Member, int]) -> bool:
+        # for testing purposes, I'm going to leave this in:
+        if isinstance(user, discord.Member) and user.guild_permissions.administrator:
+            return True
         user_id = user.id if isinstance(user, discord.User | discord.Member) else user
         return user_id in [s.value for s in Staff]
 

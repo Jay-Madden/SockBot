@@ -229,7 +229,7 @@ class SockBot(commands.Bot):
 
     async def current_prefix(self, ctx):
         prefixes = await self.get_prefix(ctx)
-        return prefixes[2]
+        return prefixes[0]
 
     """
     This is the code to dynamically load all cogs and services defined in the assembly.

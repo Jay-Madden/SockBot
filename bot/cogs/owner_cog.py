@@ -4,9 +4,7 @@ import logging
 from collections import deque
 
 import aiosqlite
-import discord
 import discord.ext.commands as commands
-import bot
 
 import bot.bot_secrets as bot_secrets
 from bot.consts import DiscordLimits
@@ -92,6 +90,7 @@ class OwnerCog(commands.Cog):
             return
 
         await ctx.send(f'```{json_res}```')
+
 
 async def setup(bot):
     await bot.add_cog(OwnerCog(bot))

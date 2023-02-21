@@ -51,8 +51,8 @@ class ClassChannel(ClassChannelScaffold):
 
 @dataclass
 class ClassPin:
-    pin_message_id: int
-    original_post_message_id: int
+    sockbot_message_id: int
+    user_message_id: int
     channel_id: int
     pin_owner: int
     pin_requester: int
