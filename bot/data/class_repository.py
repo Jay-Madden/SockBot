@@ -6,7 +6,6 @@ import discord
 
 from bot.data.base_repository import BaseRepository
 from bot.models.class_models import ClassSemester, ClassChannel
-from bot.utils.helpers import strtodt
 
 
 class ClassRepository(BaseRepository):
@@ -26,9 +25,7 @@ class ClassRepository(BaseRepository):
         current_datetime = datetime.datetime.utcnow()
         # convert strings to datetimes and compare with current datetime
         for semester in await self.get_all_semesters():
-            semester_start = strtodt(semester.semester_start)
-            semester_end = strtodt(semester.semester_end)
-            if semester_start <= current_datetime <= semester_end:
+            if semester.start_date() <= current_datetime <= semester.end_date():
                 return semester
         return None
 
@@ -38,8 +35,7 @@ class ClassRepository(BaseRepository):
         """
         current_datetime = datetime.datetime.utcnow()
         for semester in await self.get_all_semesters():
-            semester_start = strtodt(semester.semester_start)
-            if current_datetime <= semester_start:
+            if current_datetime < semester.start_date():
                 return semester
         return None
 
