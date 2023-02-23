@@ -10,18 +10,18 @@ from bot.messaging.events import Events
 from bot.models.class_models import ClassSemester, ClassChannel, ClassChannelScaffold
 from bot.services.base_service import BaseService
 from bot.sock_bot import SockBot
-from bot.utils.helpers import error_embed
+from bot.utils.helpers import error_embed, fetch_optional_message
 
 log = logging.getLogger(__name__)
 MAX_CHANNELS_PER_CATEGORY = 50
-POST_MESSAGE_REACTION = '✅'
+WELCOME_MESSAGE_REACTION = '✅'
 
 
 class ClassService(BaseService):
 
     def __init__(self, *, bot: SockBot):
         super().__init__(bot)
-        self.messages: list[int] = []
+        self.messages: set[int] = set()
         self.repo = ClassRepository()
 
     @BaseService.Listener(Events.on_class_create)
@@ -77,11 +77,12 @@ class ClassService(BaseService):
         # send notifications and interaction embed
         embed = discord.Embed(title='📔 Class Inserted', color=Colors.Purple)
         embed.description = f'The channel {channel.mention} has been inserted as a class.'
-        embed.description += f'\nThe role {role.mention} has been set as the class role.' if role else ''
+        if role:
+            embed.description += f'\nThe role {role.mention} has been set as the class role.'
         embed.add_field(name='Class Title', value=cls.full_title(), inline=False)
         embed.add_field(name='Semester', value=semester.semester_name)
         embed.add_field(name='Instructor', value=cls.class_professor)
-        embed.add_field(name='Inserted By', value=inter.user.mention,)
+        embed.add_field(name='Inserted By', value=inter.user.mention)
         await self._get_notifs_channel().send(embed=embed)
         await inter.followup.send(embed=embed)
 
@@ -143,11 +144,14 @@ class ClassService(BaseService):
         if not (semester := await self._check_semester(inter)):
             return None
         await inter.response.defer(thinking=True)
+        # make sure the channel exists before we unarchive
         if not (channel := self.bot.guild.get_channel(cls.channel_id)):
-            await self._send_failure(cls, 'Class Unarchive Failed', f'Channel with ID `{cls.channel_id} not found.`')
+            await self._send_failure(cls, 'Class Unarchive Failed', f'Channel with ID `{cls.channel_id}` not found.')
             return None
+        # get our category and role ready
         category = await self._get_or_create_category(cls)
         role = await self._get_or_create_role(cls)
+        # move, sort, sync perms, update the class channel, send our welcome message, and update the repo
         await self._move_and_sort(category, channel)
         await self._sync_perms(cls)
         cls.class_archived = False
@@ -156,6 +160,7 @@ class ClassService(BaseService):
         cls.semester_id = semester.semester_id
         await self._send_welcome(cls, False, inter.user)
         await self.repo.update_class(cls)
+        # add the new or already-existing role to the user and send our embed.
         await inter.user.add_roles(role, reason='Class unarchival')
         embed = discord.Embed(title='📔 Class Unarchived', color=Colors.Purple)
         embed.description = f'Your class channel has been unarchived: {channel.mention}'
@@ -173,7 +178,6 @@ class ClassService(BaseService):
         # remove the post message ID from our cache and delete the role
         if not class_channel.class_archived:
             self.messages.remove(class_channel.post_message_id)
-        notif_channel = self._get_notifs_channel()
         if role := self.bot.guild.get_role(class_channel.class_role_id):
             await role.delete(reason='Class deletion')
         # push the deletion to our repository and send the notification
@@ -184,17 +188,22 @@ class ClassService(BaseService):
             embed.description += f'\nThe role `@{class_channel.class_code()}` has been deleted for convenience.'
         embed.add_field(name='Class Title', value=class_channel.full_title())
         embed.add_field(name='Semester', value=class_channel.semester_id)
-        await notif_channel.send(embed=embed)
+        await self._get_notifs_channel().send(embed=embed)
 
     @BaseService.Listener(Events.on_guild_role_delete)
     async def on_role_delete(self, role: discord.Role):
-        if class_channel := await self.repo.search_class_by_role(role):
+        if not (class_channel := await self.repo.search_class_by_role(role)):
+            return
+        # we should not be calling update_class if the role is being deleted due to channel deletion (see above func)
+        # we can check whether this is due to channel deletion or role deletion by checking our cache
+        # if the channel is being deleted, self.messages should not contain the post_message_id for the class channel
+        if class_channel.post_message_id in self.messages:
             class_channel.class_role_id = None
             await self.repo.update_class(class_channel)
 
     @BaseService.Listener(Events.on_reaction_add)
     async def on_reaction_add(self, react: discord.Reaction, user: discord.Member):
-        if react.emoji != POST_MESSAGE_REACTION:
+        if react.emoji != WELCOME_MESSAGE_REACTION:
             return
         if user.bot or react.message.id not in self.messages:
             return
@@ -206,7 +215,7 @@ class ClassService(BaseService):
 
     @BaseService.Listener(Events.on_reaction_remove)
     async def on_reaction_remove(self, react: discord.Reaction, user: discord.Member):
-        if react.emoji != POST_MESSAGE_REACTION:
+        if react.emoji != WELCOME_MESSAGE_REACTION:
             return
         if user.bot or react.message.id not in self.messages:
             return
@@ -311,15 +320,15 @@ class ClassService(BaseService):
             await self._send_failure(cls, 'Welcome Message Failed', f'The channel `{cls.channel_id}` does not exist.')
             return
         embed = discord.Embed(title=f'📔 {cls.full_title()}', color=Colors.Purple)
-        embed.description = f'Welcome back, students!\n' \
-                            f'Click the {POST_MESSAGE_REACTION} reaction below to join the class.'
+        embed.description = f'Welcome back, students!\n\n' \
+                            f'Click the {WELCOME_MESSAGE_REACTION} reaction below to join the class.'
         embed.add_field(name='Semester', value=semester.semester_name)
-        embed.add_field(name='Professor', value=cls.class_professor)
+        embed.add_field(name='Instructor', value=cls.class_professor)
         embed.add_field(name='Created By' if just_created else 'Unarchived By', value=user.mention)
         message = await channel.send(embed=embed)
         cls.post_message_id = message.id
-        self.messages.append(message.id)
-        await message.add_reaction(POST_MESSAGE_REACTION)
+        self.messages.add(message.id)
+        await message.add_reaction(WELCOME_MESSAGE_REACTION)
 
     async def _send_failure(self, cls: ClassChannel, title: str, desc: str) -> None:
         """
@@ -355,8 +364,7 @@ class ClassService(BaseService):
     def _get_notifs_channel(self) -> discord.TextChannel:
         """
         Gets the notification channel for the guild.
-        If the `class_notifs_channel_id` is not set in the bot secrets, bad things happen.
-        :raise AssertionError: Raised if the `class_notifs_channel_id` is not set in the bot secrets.
+        :raise AssertionError: Raised if `class_notifs_channel_id` is not set in the bot secrets.
         """
         channel = self.bot.guild.get_channel(bot_secrets.secrets.class_notifs_channel_id)
         assert channel is not None
@@ -377,8 +385,8 @@ class ClassService(BaseService):
                 continue
             if not class_channel.post_message_id:
                 continue
-            if not await channel.fetch_message(class_channel.post_message_id):
+            if not await fetch_optional_message(channel, class_channel.post_message_id):
                 class_channel.post_message_id = None
                 await self.repo.update_class(class_channel)
                 continue
-            self.messages.append(class_channel.post_message_id)
+            self.messages.add(class_channel.post_message_id)

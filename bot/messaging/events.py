@@ -538,7 +538,7 @@ class EventsMeta(type):
 
         Args:
             inter (discord.Interaction): The app command interaction.
-            cls (bot.models.class_models.ClassChannel): The class channel to insert.
+            cls (bot.models.class_models.ClassChannelScaffold): The class channel scaffolding.
             channel (discord.TextChannel): The text channel to pair the class channel with.
             role (discord.Role | None = None): The optional role to insert with the class.
             desc (str | None = None): The optional channel description.

@@ -1,6 +1,7 @@
 from typing import Union
 
 import discord
+from discord import RawMessageDeleteEvent
 from discord.ext.commands import Context
 
 from bot.consts import Staff, Colors
@@ -10,10 +11,11 @@ from bot.messaging.events import Events
 from bot.models.class_models import ClassPin
 from bot.services.base_service import BaseService
 from bot.sock_bot import SockBot
+from bot.utils.helpers import fetch_optional_message
 
 PIN_REACTION = '📌'
-MIN_PIN_REACTIONS = 5       # 4 + 1 (SockBot)
-MAX_CONTENT_CHARS = 247     # 250 - '...'
+MIN_PIN_REACTIONS = 5
+MAX_CONTENT_CHARS = 250
 MAX_PINS_PER_CHANNEL = 50
 
 
@@ -26,22 +28,20 @@ class PinService(BaseService):
 
     @BaseService.Listener(Events.on_pin_request)
     async def on_pin_request(self, ctx: Context, message: discord.Message):
-        # prepare our embed, send embed, and react with 📌
-        embed = discord.Embed(title='📌 Pin Request', color=Colors.Purple)
-        embed.description = f'{ctx.author.mention} wants to pin a message.\n' \
-                            f'Click the {PIN_REACTION} reaction below to pin this message.'
-        content: str
+        # format our message content
         if len(message.content) > MAX_CONTENT_CHARS:
             content = message.content[:MAX_CONTENT_CHARS] + '...'
         else:
             content = message.content
-        if len(message.attachments) > 0:
-            if len(content) > 0:
-                content += '\n\n'
-            content += f'{len(message.attachments)} file(s) attached.'
-        embed.add_field(name='Content', value=f'```{content}```', inline=False)
+        # prepare our embed
+        embed = discord.Embed(title='📌 Pin Request', color=Colors.Purple)
+        embed.description = f'{ctx.author.mention} wants to pin a message.\n' \
+                            f'Click the {PIN_REACTION} reaction below to pin this message.'
+        embed.add_field(name='Content', value=content, inline=False)
         embed.add_field(name='Author', value=message.author.mention)
         embed.add_field(name='Message Link', value=f'[Link]({message.jump_url})')
+        if len(message.attachments):
+            embed.add_field(name='Files Attached', value=len(message.attachments))
         sockbot_message = await message.channel.send(embed=embed)
         await sockbot_message.add_reaction(PIN_REACTION)
         # create our class pin object and push it to the db
@@ -59,7 +59,7 @@ class PinService(BaseService):
         if react.count >= MIN_PIN_REACTIONS or Staff.is_staff(user):
             channel = react.message.channel
             # make sure our message to-be-pinned still exists
-            if not (to_pin := await channel.fetch_message(class_pin.user_message_id)):
+            if not (to_pin := await fetch_optional_message(channel, class_pin.user_message_id)):
                 await react.message.delete()
                 await self.pin_repo.delete_pin(class_pin)
                 return
@@ -73,19 +73,13 @@ class PinService(BaseService):
             await self.pin_repo.set_pinned(class_pin)
             await react.message.delete()
 
-    @BaseService.Listener(Events.on_message_delete)
-    async def on_message_delete(self, message: discord.Message):
-        class_pin: ClassPin | None
+    @BaseService.Listener(Events.on_raw_message_delete)
+    async def on_message_delete(self, payload: RawMessageDeleteEvent):
+        # using the on_raw_message_delete event because on_message_delete ignores self-posts
         # check if the message was in our db (either sockbot's embed or to-be-pinned message)
-        if message.author.id == self.bot.user.id:
-            class_pin = await self.pin_repo.get_pin_from_sockbot(message)
-        else:
-            class_pin = await self.pin_repo.get_pin_from_user(message)
-        # check if a class pin associated with the message exists, and if not pinned, delete the pin
-        if not class_pin:
+        if not (class_pin := await self.pin_repo.get_open_pin_from_message(payload.message_id)):
             return
-        if not class_pin.pin_pinned:
-            await self.pin_repo.delete_pin(class_pin)
+        await self.pin_repo.delete_pin(class_pin)
 
     @BaseService.Listener(Events.on_guild_channel_delete)
     async def on_channel_delete(self, channel: discord.TextChannel):
@@ -98,8 +92,12 @@ class PinService(BaseService):
             if not (channel := self.bot.guild.get_channel(class_pin.channel_id)):
                 await self.pin_repo.delete_pin(class_pin)
                 continue
+            # make sure that the embed sent by SockBot still exists
+            if not await fetch_optional_message(channel, class_pin.sockbot_message_id):
+                await self.pin_repo.delete_pin(class_pin)
+                continue
             # make sure the message to-be-pinned still exists
-            if not (message := await channel.fetch_message(class_pin.user_message_id)):
+            if not (message := await fetch_optional_message(channel, class_pin.user_message_id)):
                 await self.pin_repo.delete_pin(class_pin)
                 continue
             if message.pinned:

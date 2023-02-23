@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Literal, Union
 
 import discord
+from discord import NotFound
 
 from bot.consts import Colors
 from bot.messaging.events import Events
@@ -40,3 +41,15 @@ async def deletable_error_embed(bot: SockBot, ctx, description: str) -> None:
     await bot.messenger.publish(
         Events.on_set_deletable, msg=msg, author=ctx.author, timeout=60
     )
+
+
+async def fetch_optional_message(channel: discord.TextChannel, message_id: int) -> discord.Message | None:
+    """
+    Tries to fetch a discord.Message object from the given channel.
+    If discord.errors.NotFound is raised, the method will return None.
+
+    """
+    try:
+        return await channel.fetch_message(message_id)
+    except NotFound:
+        return None
