@@ -81,7 +81,7 @@ class OwnerCog(commands.Cog):
 
         async with aiosqlite.connect(f'file:{db_path}?mode={connect_mode}', uri=True) as db:
             async with db.execute(query) as c:
-                result = await BaseRepository().fetcthall_as_dict(c)
+                result = await BaseRepository().fetch_all_as_dict(c)
 
         json_res = json.dumps(result, **json_params)
 

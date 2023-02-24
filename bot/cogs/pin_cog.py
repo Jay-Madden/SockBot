@@ -9,8 +9,6 @@ from bot.messaging.events import Events
 from bot.sock_bot import SockBot
 from bot.utils.helpers import deletable_error_embed
 
-PIN_COMMAND_COOLDOWN = 120  # 2 minutes
-
 
 class PinCog(commands.Cog):
 
@@ -20,7 +18,6 @@ class PinCog(commands.Cog):
         self.pin_repo = PinRepository()
 
     @ext.command(case_insensitive=True)
-    # @commands.cooldown(1, PIN_COMMAND_COOLDOWN, commands.BucketType.user)
     @ext.short_help('Open a pin request.')
     @ext.long_help('Open a request to get a message pinned in your class channel.')
     @ext.example(['pin https://discord.com/...'])

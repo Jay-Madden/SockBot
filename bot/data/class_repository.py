@@ -1,4 +1,3 @@
-import datetime
 from typing import Union
 
 import aiosqlite
@@ -16,28 +15,32 @@ class ClassRepository(BaseRepository):
         """
         async with aiosqlite.connect(self.resolved_db_path) as db:
             cursor = await db.execute("SELECT * FROM ClassSemester")
-            return [ClassSemester(**d) for d in await self.fetcthall_as_dict(cursor)]
+            return [ClassSemester(**d) for d in await self.fetch_all_as_dict(cursor)]
 
     async def get_current_semester(self) -> ClassSemester | None:
         """
         Gets the current semester, if one exists.
         """
-        current_datetime = datetime.datetime.utcnow()
-        # convert strings to datetimes and compare with current datetime
-        for semester in await self.get_all_semesters():
-            if semester.start_date() <= current_datetime <= semester.end_date():
-                return semester
-        return None
+        async with aiosqlite.connect(self.resolved_db_path) as db:
+            cursor = await db.execute("""SELECT * FROM ClassSemester 
+                                         WHERE semester_start <= strftime('%Y-%m-%d %H:%M:%S', datetime('now')) 
+                                         AND strftime('%Y-%m-%d %H:%M:%S', datetime('now')) <= semester_end""")
+            dictionary = await self.fetch_first_as_dict(cursor)
+            if not len(dictionary):
+                return None
+            return ClassSemester(**dictionary)
 
     async def get_next_semester(self) -> ClassSemester | None:
         """
         Gets the next semester, if one exists.
         """
-        current_datetime = datetime.datetime.utcnow()
-        for semester in await self.get_all_semesters():
-            if current_datetime < semester.start_date():
-                return semester
-        return None
+        async with aiosqlite.connect(self.resolved_db_path) as db:
+            cursor = await db.execute("""SELECT * FROM ClassSemester
+                                         WHERE semester_start > strftime('%Y-%m-%d %H:%M:%S', datetime('now'))""")
+            dictionary = await self.fetch_first_as_dict(cursor)
+            if not len(dictionary):
+                return None
+            return ClassSemester(**dictionary)
 
     async def get_unarchived_classes(self) -> list[ClassChannel]:
         """
@@ -45,7 +48,7 @@ class ClassRepository(BaseRepository):
         """
         async with aiosqlite.connect(self.resolved_db_path) as db:
             cursor = await db.execute("SELECT * FROM ClassChannel WHERE class_archived IS FALSE")
-            return [ClassChannel(**d) for d in await self.fetcthall_as_dict(cursor)]
+            return [ClassChannel(**d) for d in await self.fetch_all_as_dict(cursor)]
 
     async def get_semester_classes(self, semester: ClassSemester, unarchived_only: bool = True) -> list[ClassChannel]:
         """
@@ -56,7 +59,7 @@ class ClassRepository(BaseRepository):
                     + ' AND class_archived = FALSE' if unarchived_only else ''
         async with aiosqlite.connect(self.resolved_db_path) as db:
             cursor = await db.execute(statement, (semester.semester_id,))
-            return [ClassChannel(**d) for d in await self.fetcthall_as_dict(cursor)]
+            return [ClassChannel(**d) for d in await self.fetch_all_as_dict(cursor)]
 
     async def search_semester(self, semester_id: str) -> ClassSemester | None:
         """
@@ -66,7 +69,7 @@ class ClassRepository(BaseRepository):
         """
         async with aiosqlite.connect(self.resolved_db_path) as db:
             cursor = await db.execute("SELECT * FROM ClassSemester WHERE semester_id = ?", (semester_id,))
-            dictionary = await self.fetcthone_as_dict(cursor)
+            dictionary = await self.fetch_first_as_dict(cursor)
             if not len(dictionary):
                 return None
             return ClassSemester(**dictionary)
@@ -82,7 +85,7 @@ class ClassRepository(BaseRepository):
                     AND class_number = ? 
                     AND class_professor = ?""", (prefix, num, prof)
             )
-            dictionary = await self.fetcthone_as_dict(cursor)
+            dictionary = await self.fetch_first_as_dict(cursor)
             if not len(dictionary):
                 return None
             return ClassChannel(**dictionary)
@@ -94,7 +97,7 @@ class ClassRepository(BaseRepository):
         channel_id = channel if isinstance(channel, int) else channel.id
         async with aiosqlite.connect(self.resolved_db_path) as db:
             cursor = await db.execute('SELECT * FROM ClassChannel WHERE channel_id = ?', (channel_id,))
-            dictionary = await self.fetcthone_as_dict(cursor)
+            dictionary = await self.fetch_first_as_dict(cursor)
             if not len(dictionary):
                 return None
             return ClassChannel(**dictionary)
@@ -106,7 +109,7 @@ class ClassRepository(BaseRepository):
         role_id = role if isinstance(role, int) else role.id
         async with aiosqlite.connect(self.resolved_db_path) as db:
             cursor = await db.execute('SELECT * FROM ClassChannel WHERE class_role_id = ?', (role_id,))
-            dictionary = await self.fetcthone_as_dict(cursor)
+            dictionary = await self.fetch_first_as_dict(cursor)
             if not len(dictionary):
                 return None
             return ClassChannel(**dictionary)

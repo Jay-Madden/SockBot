@@ -15,7 +15,7 @@ class PinRepository(BaseRepository):
         """
         async with aiosqlite.connect(self.resolved_db_path) as db:
             cursor = await db.execute('SELECT * FROM ClassPin WHERE pin_pinned = FALSE')
-            return [ClassPin(**d) for d in await self.fetcthall_as_dict(cursor)]
+            return [ClassPin(**d) for d in await self.fetch_all_as_dict(cursor)]
 
     async def get_open_pin_from_message(self, message: Union[int, discord.Message]) -> ClassPin | None:
         """
@@ -28,7 +28,7 @@ class PinRepository(BaseRepository):
                                          WHERE sockbot_message_id = ? 
                                          OR user_message_id = ?
                                          AND pin_pinned = FALSE""", (message_id, message_id))
-            dictionary = await self.fetcthone_as_dict(cursor)
+            dictionary = await self.fetch_first_as_dict(cursor)
             if not len(dictionary):
                 return None
             return ClassPin(**dictionary)
@@ -42,7 +42,7 @@ class PinRepository(BaseRepository):
         message_id = message if isinstance(message, int) else message.id
         async with aiosqlite.connect(self.resolved_db_path) as db:
             cursor = await db.execute('SELECT * FROM ClassPin WHERE sockbot_message_id = ?', (message_id,))
-            dictionary = await self.fetcthone_as_dict(cursor)
+            dictionary = await self.fetch_first_as_dict(cursor)
             if not len(dictionary):
                 return None
             return ClassPin(**dictionary)
@@ -56,7 +56,7 @@ class PinRepository(BaseRepository):
         message_id = message if isinstance(message, int) else message.id
         async with aiosqlite.connect(self.resolved_db_path) as db:
             cursor = await db.execute('SELECT * FROM ClassPin WHERE user_message_id = ?', (message_id,))
-            dictionary = await self.fetcthone_as_dict(cursor)
+            dictionary = await self.fetch_first_as_dict(cursor)
             if not len(dictionary):
                 return None
             return ClassPin(**dictionary)
@@ -68,7 +68,7 @@ class PinRepository(BaseRepository):
         channel_id = channel if isinstance(channel, int) else channel.id
         async with aiosqlite.connect(self.resolved_db_path) as db:
             cursor = await db.execute('SELECT * FROM ClassPin WHERE channel_id = ?', (channel_id,))
-            return [ClassPin(**d) for d in await self.fetcthall_as_dict(cursor)]
+            return [ClassPin(**d) for d in await self.fetch_all_as_dict(cursor)]
 
     async def set_pinned(self, pinned_message: ClassPin) -> None:
         """

@@ -113,11 +113,16 @@ class ManageClassesCog(commands.GroupCog, name='class'):
             embed.description = f'Channel {channel.mention} is not registered as a class.'
             await inter.response.send_message(embed=embed, ephemeral=True)
             return
+        # fetch the role and the semester of this class (semester should NEVER be None)
+        role = self.bot.guild.get_role(class_channel.class_role_id)
+        semester = await self.repo.search_semester(class_channel.semester_id)
+        assert semester is not None
+        # send the embed with the class details
         embed = discord.Embed(title='📔 Class Details', color=Colors.Purple)
         embed.description = f'The channel {channel.mention} is registered as a class.'
         embed.add_field(name='Class Title', value=class_channel.full_title(), inline=False)
-        embed.add_field(name='Class Instructor', value=class_channel.class_professor.title())
-        embed.add_field(name='Class Semester', value=class_channel.semester_id)
+        embed.add_field(name='Class Role', value=role.mention if role else 'None')
+        embed.add_field(name='Class Semester', value=semester.semester_name)
         embed.add_field(name='Archived', value=bool(class_channel.class_archived))
         await inter.response.send_message(embed=embed)
 
@@ -125,9 +130,8 @@ class ManageClassesCog(commands.GroupCog, name='class'):
 
     @semester_group.command(name='list', description='Get info on the current or next semester.')
     async def list(self, inter: discord.Interaction):
-        current_semester = await self.repo.get_current_semester()
-        next_semester = await self.repo.get_next_semester()
-        if current_semester:
+        # check if we are currently in a semester
+        if current_semester := await self.repo.get_current_semester():
             embed = discord.Embed(title='📔 Current Semester', color=Colors.Purple)
             embed.description = 'Here is the information for the current semester.'
             embed.add_field(name='Name', value=current_semester.semester_name, inline=False)
@@ -135,13 +139,18 @@ class ManageClassesCog(commands.GroupCog, name='class'):
             embed.add_field(name='End Date', value=as_timestamp(current_semester.end_date()))
             embed.set_footer(text='Start and end dates do not reflect the actual start and end of a semester.')
             await inter.response.send_message(embed=embed)
-        else:
+        # if no current semester, try and fetch the next one
+        elif next_semester := await self.repo.get_next_semester():
             embed = discord.Embed(title='📔 Next Semester', color=Colors.Purple)
             embed.description = 'Currently, there is no semester in session.\n' \
                                 'Here is the information for the upcoming semester.'
             embed.add_field(name='Name', value=next_semester.semester_name)
             embed.add_field(name='Start Date', value=as_timestamp(next_semester.start_date()))
             embed.set_footer(text='Start and end dates do not reflect the actual start and end of a semester.')
+            await inter.response.send_message(embed=embed)
+        # worst case scenario...
+        else:
+            embed = error_embed(inter.user, 'Could not find current nor next semester.')
             await inter.response.send_message(embed=embed)
 
     @semester_group.command(name='archive', description='Manually archive a semester.')

@@ -357,7 +357,7 @@ class ClassService(BaseService):
         # we should technically never enter this if statement at this point, but just in case...
         if not (semester := await self.repo.get_current_semester()):
             embed = error_embed(inter.user, 'No current semester in session.')
-            await inter.response.send_message(embed=embed)
+            await inter.response.send_message(embed=embed, ephemeral=True)
             return None
         return semester
 
