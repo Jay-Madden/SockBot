@@ -48,7 +48,6 @@ class ManageClassesCog(commands.GroupCog, name='class'):
 
     @app_commands.command(name='insert', description='Insert a class channel.')
     async def insert(self, inter: discord.Interaction, channel: discord.TextChannel, role: discord.Role | None = None):
-        # check perms
         if not await self._perms_check(inter):
             return
 
@@ -73,7 +72,6 @@ class ManageClassesCog(commands.GroupCog, name='class'):
 
     @app_commands.command(name='archive', description='Manually archive a class channel.')
     async def class_archive(self, inter: discord.Interaction, channel: discord.TextChannel):
-        # check perms
         if not await self._perms_check(inter):
             return
 
@@ -93,7 +91,6 @@ class ManageClassesCog(commands.GroupCog, name='class'):
 
     @app_commands.command(name='unarchive', description='Manually unarchive a class channel.')
     async def class_unarchive(self, inter: discord.Interaction, channel: discord.TextChannel):
-        # check perms
         if not await self._perms_check(inter):
             return
 
@@ -172,7 +169,6 @@ class ManageClassesCog(commands.GroupCog, name='class'):
 
     @semester_group.command(name='archive', description='Manually archive a semester.')
     async def semester_archive(self, inter: discord.Interaction, semester_id: str):
-        # check perms
         if not await self._perms_check(inter):
             return
 

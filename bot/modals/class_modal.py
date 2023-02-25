@@ -87,7 +87,7 @@ class AddClassModal(Modal):
             await inter.response.send_message(embed=embed, ephemeral=True)
             return
         # format our data, so it's nice and neat and capitalized correctly (I know you guys don't use caps)
-        professor = self.professor.value.split(' ')[-1].capitalize()
+        professor = self.professor.value.split()[-1].capitalize()
         title = self.course_title.value.title()
         major = self.major.value.upper()
         description = self.course_description.value.capitalize()
@@ -127,7 +127,7 @@ class AddClassModal(Modal):
             if role := self._bot.guild.get_role(similar_class.class_role_id):
                 await inter.user.add_roles(role)
             embed = discord.Embed(title='📔 Similar Class Found', color=Colors.Purple)
-            embed.description = f'A similar class channel has been found.'
+            embed.description = 'A similar class channel has been found.'
             if role:
                 embed.description += f'\nThe {role.mention} role has been added to you.'
             embed.add_field(name='Channel', value=channel.mention)
@@ -178,7 +178,7 @@ class AddClassModal(Modal):
         if len(split_topic) == 2:
             self.course_title.default = split_topic[0].title().strip()[:MAX_TITLE_LEN]
             description = split_topic[1].strip()[:MAX_DESCR_LEN]
-            self.course_description.default = description if len(description) != 0 else 'None'
+            self.course_description.default = description or 'None'
 
 
 def valid_course_maj(course_maj: str) -> bool:
@@ -186,11 +186,7 @@ def valid_course_maj(course_maj: str) -> bool:
 
 
 def valid_course_num(course_num: Union[str, int]) -> bool:
-    number: int
-    if isinstance(course_num, str):
-        if not course_num.isdigit():
-            return False
-        number = int(course_num)
-    else:
-        number = course_num
-    return MIN_CLASS_NUM <= number <= MAX_CLASS_NUM
+    if isinstance(course_num, str) and not course_num.isdigit():
+        return False
+
+    return MIN_CLASS_NUM <= int(course_num) <= MAX_CLASS_NUM

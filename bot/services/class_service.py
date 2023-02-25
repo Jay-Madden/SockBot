@@ -12,14 +12,15 @@ from bot.services.base_service import BaseService
 from bot.sock_bot import SockBot
 from bot.utils.helpers import error_embed, fetch_optional_message
 
-log = logging.getLogger(__name__)
 MAX_CHANNELS_PER_CATEGORY = 50
 WELCOME_MESSAGE_REACTION = '✅'
+
+log = logging.getLogger(__name__)
 
 
 class ClassService(BaseService):
 
-    def __init__(self, *, bot: SockBot):
+    def __init__(self, bot: SockBot):
         super().__init__(bot)
         self.messages: set[int] = set()
         self.repo = ClassRepository()

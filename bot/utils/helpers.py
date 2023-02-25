@@ -9,12 +9,12 @@ from bot.consts import Colors
 from bot.messaging.events import Events
 from bot.sock_bot import SockBot
 
-FORMAT = '%Y-%m-%d %H:%M:%S'
+DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 
 def strtodt(date: str) -> datetime:
     """A simple util for translating UTC timestamps in the database to UTC datetime.datetime objects."""
-    return datetime.strptime(date, FORMAT)
+    return datetime.strptime(date, DATE_FORMAT)
 
 
 def as_timestamp(date: datetime, /, style: Literal["f", "F", "d", "D", "t", "T", "R"] = "f") -> str:
@@ -47,7 +47,6 @@ async def fetch_optional_message(channel: discord.TextChannel, message_id: int) 
     """
     Tries to fetch a discord.Message object from the given channel.
     If discord.errors.NotFound is raised, the method will return None.
-
     """
     try:
         return await channel.fetch_message(message_id)

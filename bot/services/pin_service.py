@@ -21,7 +21,7 @@ MAX_PINS_PER_CHANNEL = 50
 
 class PinService(BaseService):
 
-    def __init__(self, *, bot: SockBot):
+    def __init__(self, bot: SockBot):
         super().__init__(bot)
         self.pin_repo = PinRepository()
         self.class_repo = ClassRepository()
@@ -72,7 +72,7 @@ class PinService(BaseService):
             if len(pinned_messages) == MAX_PINS_PER_CHANNEL:
                 await pinned_messages[0].unpin(reason='Unpinned to make room.')
             # pin the message, update the pin in the db, and delete sockbot's pin request embed
-            await to_pin.pin(reason='Pinned by `pin` command.')
+            await to_pin.pin(reason=f'Pinned by vote, started by user with ID {class_pin.pin_requester}')
             await self.pin_repo.set_pinned(class_pin)
             await react.message.delete()
 

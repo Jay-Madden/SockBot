@@ -26,7 +26,7 @@ class ExampleService(BaseService):
     or command, it handles background tasks and startup functionality
     """
 
-    def __init__(self, *, bot):
+    def __init__(self, bot):
         # The bot object that represents the current client is injected in to the service on startup and
         # Sent to the base class where it is stored
         super().__init__(bot)
