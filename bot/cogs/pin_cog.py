@@ -45,6 +45,7 @@ class PinCog(commands.Cog):
         if sent_channel.class_archived:
             await deletable_error_embed(self.bot, ctx, 'Cannot open a pin request in an archived channel.')
             return
+
         # check to see if a class pin already exists for the given message
         if class_pin := await self.pin_repo.get_pin_from_user(message):
             request_message = message.channel.get_partial_message(class_pin.sockbot_message_id)
@@ -59,6 +60,7 @@ class PinCog(commands.Cog):
             await ctx.message.delete()
             await self.bot.messenger.publish(Events.on_set_deletable, msg=message, author=ctx.author)
             return
+
         await self.bot.messenger.publish(Events.on_pin_request, ctx, message)
 
 

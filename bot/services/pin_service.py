@@ -52,10 +52,13 @@ class PinService(BaseService):
 
     @BaseService.Listener(Events.on_reaction_add)
     async def on_reaction_add(self, react: discord.Reaction, user: Union[discord.User, discord.Member]):
+        # check if it's the right emoji and if it is, check if the message ID exists in the db
         if react.emoji != PIN_REACTION:
             return
         if not (class_pin := await self.pin_repo.get_pin_from_sockbot(react.message)):
             return
+
+        # check if the reaction count is met OR the user is part of staff (or has admin perms)
         if react.count >= MIN_PIN_REACTIONS or Staff.is_staff(user):
             channel = react.message.channel
             # make sure our message to-be-pinned still exists
@@ -75,7 +78,7 @@ class PinService(BaseService):
 
     @BaseService.Listener(Events.on_raw_message_delete)
     async def on_message_delete(self, payload: RawMessageDeleteEvent):
-        # using the on_raw_message_delete event because on_message_delete ignores self-posts
+        # using the on_raw_message_delete event because on_message_delete ignores SockBot's messages being deleted
         # check if the message was in our db (either sockbot's embed or to-be-pinned message)
         if not (class_pin := await self.pin_repo.get_open_pin_from_message(payload.message_id)):
             return
@@ -100,5 +103,6 @@ class PinService(BaseService):
             if not (message := await fetch_optional_message(channel, class_pin.user_message_id)):
                 await self.pin_repo.delete_pin(class_pin)
                 continue
+            # if the message was pinned while we were offline, set it as pinned in the db
             if message.pinned:
                 await self.pin_repo.set_pinned(class_pin)

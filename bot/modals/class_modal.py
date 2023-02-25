@@ -108,10 +108,21 @@ class AddClassModal(Modal):
             await self._bot.messenger.publish(Events.on_class_create, inter, scaffold, description)
 
     async def _search_similar(self, inter: discord.Interaction, pref: str, num: int, prof: str) -> bool:
-        similar_class = await self._repo.search_class(pref, num, prof)
-        if not similar_class:
+        """
+        Searches for a similar class with the given major, course number, and instructor.
+
+        Returns True if:
+        - A similar class, that already exists and is unarchived, is found.
+        - A similar class that already exists, but is archived.
+
+        Returns False otherwise.
+        """
+        if not (similar_class := await self._repo.search_class(pref, num, prof)):
             return False
+
         channel = self._bot.guild.get_channel(similar_class.channel_id)
+
+        # if the channel exists and the class is unarchived, add the class role & send the embed
         if channel and not similar_class.class_archived:
             if role := self._bot.guild.get_role(similar_class.class_role_id):
                 await inter.user.add_roles(role)
@@ -124,25 +135,46 @@ class AddClassModal(Modal):
             embed.add_field(name='Class Title', value=similar_class.full_title(), inline=False)
             await inter.response.send_message(embed=embed)
             return True
+
+        # if a channel exists, but the class is archived - publish unarchive event for our similar class
         if channel and similar_class.class_archived:
             await self._bot.messenger.publish(Events.on_class_unarchive, inter, similar_class)
             return True
+
+        # a similar class was found in the database, but the paired channel doesn't exist...
+        # the method should never reach this point though, since class channels that have no existing
+        # channel are purged from the database upon startup of SockBot (as well as in a listener)
         return False
 
     def _autofill(self, data: Union[tuple[str, int], discord.TextChannel]) -> None:
+        """
+        Automatically fills in the defaults of our items with our given data.
+        If `tuple[str, int]` is given as our data, we can fill:
+        - major
+        - course_number
+
+        If `discord.TextChannel` is given as our data, we can fill some or all items, given:
+        - The name of the channel is formatted as `MAJR-XXXX-[Professor]`
+        - The topic of the channel is formatted as `[Course Title] - [Course Description]`
+        """
         if isinstance(data, tuple):
             prefix, num = data
             self.major.default = prefix
             self.course_number.default = num
             return
+
         split_topic = data.topic.split('-') if data.topic else []
         split_name = data.name.split('-')
+
+        # fill in the data from our split channel name, if possible
         if len(split_name) >= 3:
             if valid_course_maj(split_name[0]):
                 self.major.default = split_name[0].upper()
             if valid_course_num(split_name[1]):
                 self.course_number.default = split_name[1].strip()
             self.professor.default = split_name[-1].strip().capitalize()[:MAX_INSTR_LEN]
+
+        # fill in the data from our split channel topic, if possible
         if len(split_topic) == 2:
             self.course_title.default = split_topic[0].title().strip()[:MAX_TITLE_LEN]
             description = split_topic[1].strip()[:MAX_DESCR_LEN]
