@@ -34,7 +34,7 @@ class ClassService(BaseService):
         # create and assign what we couldn't in the class channel scaffold
         category = await self._get_or_create_category(cls)
         role = await self._get_or_create_role(cls)
-        channel = await self.bot.guild.create_text_channel(name=cls.channel_name(), topic=f'{cls.class_name} - {desc}')
+        channel = await self.bot.guild.create_text_channel(name=cls.channel_name, topic=f'{cls.class_name} - {desc}')
         class_channel = ClassChannel(cls.class_prefix, cls.class_number, cls.class_professor,
                                      cls.class_name, channel.id, semester.semester_id,
                                      category.id, role.id, post_message_id=None)
@@ -49,7 +49,7 @@ class ClassService(BaseService):
         await inter.user.add_roles(role, reason='Class creation')
         embed = discord.Embed(title='📔 Class Created', color=Colors.Purple)
         embed.description = f'Your new class channel has been created: {channel.mention}'
-        embed.add_field(name='Class Title', value=cls.full_title(), inline=False)
+        embed.add_field(name='Class Title', value=cls.full_title, inline=False)
         embed.add_field(name='Semester', value=semester.semester_name)
         embed.add_field(name='Instructor', value=cls.class_professor)
         embed.add_field(name='Created By', value=inter.user.mention)
@@ -77,7 +77,7 @@ class ClassService(BaseService):
                                      category.id, class_role.id, post_message_id=None)
 
         # move, sort, sync permissions, and push the new class to the repo
-        await channel.edit(name=cls.channel_name(), topic=f'{cls.class_name} - {desc}')
+        await channel.edit(name=cls.channel_name, topic=f'{cls.class_name} - {desc}')
         await self._move_and_sort(category, channel)
         await self._sync_perms(class_channel)
         await self._send_welcome(class_channel, False, inter.user)
@@ -88,7 +88,7 @@ class ClassService(BaseService):
         embed.description = f'The channel {channel.mention} has been inserted as a class.'
         if role:
             embed.description += f'\nThe role {role.mention} has been set as the class role.'
-        embed.add_field(name='Class Title', value=cls.full_title(), inline=False)
+        embed.add_field(name='Class Title', value=cls.full_title, inline=False)
         embed.add_field(name='Semester', value=semester.semester_name)
         embed.add_field(name='Instructor', value=cls.class_professor)
         embed.add_field(name='Inserted By', value=inter.user.mention)
@@ -146,7 +146,7 @@ class ClassService(BaseService):
 
         # prepare our embed
         embed = discord.Embed(title='📔 Class Archived', color=Colors.Purple)
-        embed.add_field(name='Class Title', value=cls.full_title(), inline=False)
+        embed.add_field(name='Class Title', value=cls.full_title, inline=False)
         embed.add_field(name='Channel', value=channel.mention)
         embed.add_field(name='Moved To', value=category.name)
         embed.add_field(name='Archived By', value=inter.user.mention if inter else 'System', inline=False)
@@ -188,7 +188,7 @@ class ClassService(BaseService):
         await inter.user.add_roles(role, reason='Class unarchival')
         embed = discord.Embed(title='📔 Class Unarchived', color=Colors.Purple)
         embed.description = f'Your class channel has been unarchived: {channel.mention}'
-        embed.add_field(name='Class Title', value=cls.full_title(), inline=False)
+        embed.add_field(name='Class Title', value=cls.full_title, inline=False)
         embed.add_field(name='Semester', value=semester.semester_name)
         embed.add_field(name='Instructor', value=cls.class_professor)
         embed.add_field(name='Unarchived By', value=inter.user.mention)
@@ -212,10 +212,10 @@ class ClassService(BaseService):
         # push the deletion to our repository, prepare our embed, and mention if we deleted a role
         await self.repo.delete_class(class_channel)
         embed = discord.Embed(title='📔 Class Channel Deleted', color=Colors.Error)
-        embed.description = f'Class channel #{class_channel.channel_name()} deleted.'
+        embed.description = f'Class channel #{class_channel.channel_name} deleted.'
         if role:
-            embed.description += f'\nThe role `@{class_channel.class_code()}` has been deleted for convenience.'
-        embed.add_field(name='Class Title', value=class_channel.full_title())
+            embed.description += f'\nThe role `@{class_channel.class_code}` has been deleted for convenience.'
+        embed.add_field(name='Class Title', value=class_channel.full_title)
         embed.add_field(name='Semester', value=class_channel.semester_id)
 
         # send our embed to the notifications channel
@@ -289,7 +289,7 @@ class ClassService(BaseService):
         """
         Gets or creates a new category channel for the given scaffold.
         """
-        category_name = cls.intended_category()
+        category_name = cls.intended_category
         for category in self.bot.guild.categories:
             if category_name == category.name:
                 return category
@@ -300,12 +300,12 @@ class ClassService(BaseService):
         Gets or creates a new role for the given class scaffold.
         """
         for r in self.bot.guild.roles:
-            if r.name == cls.class_code():
+            if r.name == cls.class_code:
                 return r
         return await self.bot.guild.create_role(
-            name=cls.class_code(),
+            name=cls.class_code,
             mentionable=True,
-            reason=f'Class creation or could not find class role {cls.class_code()}'
+            reason=f'Class creation or could not find class role {cls.class_code}'
         )
 
     async def _sync_perms(self, cls: ClassChannel) -> None:
@@ -353,7 +353,7 @@ class ClassService(BaseService):
             return
 
         # prepare our embed
-        embed = discord.Embed(title=f'📔 {cls.full_title()}', color=Colors.Purple)
+        embed = discord.Embed(title=f'📔 {cls.full_title}', color=Colors.Purple)
         embed.description = f'Welcome back, students!\n\n' \
                             f'Click the {WELCOME_MESSAGE_REACTION} reaction below to join the class.'
         embed.add_field(name='Semester', value=semester.semester_name)
@@ -378,7 +378,7 @@ class ClassService(BaseService):
         embed = discord.Embed(title=f'📔 {title}', color=Colors.Error)
         embed.description = f'{desc}\nHere is what is currently stored in the database.'
         embed.add_field(name='Semester', value=cls.semester_id)
-        embed.add_field(name='Channel Name', value=cls.channel_name())
+        embed.add_field(name='Channel Name', value=cls.channel_name)
         embed.add_field(name='Archived', value=bool(cls.class_archived))
         embed.add_field(name='Channel ID', value=cls.channel_id)
         embed.add_field(name='Role ID', value=cls.class_role_id)
@@ -414,7 +414,7 @@ class ClassService(BaseService):
         # since we have a current semester, schedule the archival for the end date...
         self.bot.scheduler.schedule_at(
             self.on_semester_archive(semester),
-            time=semester.end_date()
+            time=semester.end_date
         )
         # cache our post message IDs and clean up any data since the last run
         for class_channel in await self.repo.get_semester_classes(semester):

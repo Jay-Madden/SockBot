@@ -7,6 +7,7 @@ import typing as t
 from types import ModuleType
 
 import discord
+from discord.app_commands import AppCommandError, MissingPermissions
 from discord.ext import commands
 
 import bot.bot_secrets as bot_secrets
@@ -52,6 +53,7 @@ class SockBot(commands.Bot):
 
         # Sync slash commands - this does not sync commands GLOBALLY - just to self.guilds[0]
         log.info('Syncing slash commands...')
+        self.tree.error(self.on_app_command_error)
         self.tree.copy_global_to(guild=self.guild)
         await self.tree.sync(guild=self.guild)
 
@@ -200,6 +202,26 @@ class SockBot(commands.Bot):
         msg = await ctx.channel.send(embed=embed)
         await self.messenger.publish(Events.on_set_deletable, msg=msg, author=ctx.author)
         await self.global_error_handler(error)
+
+    async def on_app_command_error(self, inter: discord.Interaction, err: AppCommandError):
+        """
+        Handler for slash (app) commands. Generally only for handling MissingPermissions,
+        but if a different AppCommandError occurs, it will be passed on to the global
+        error handler.
+
+        Args:
+            inter ([type]): The app command interaction.
+            err ([type]): The app command error.
+        """
+        if isinstance(err, MissingPermissions):
+            embed = discord.Embed(title='Missing Permissions', color=Colors.Error)
+            embed.description = 'Cannot run app command: you are missing permissions.'
+            embed.add_field(name='Permission(s) Missing', value='\n'.join(err.missing_permissions).title())
+            embed.set_footer(text=str(inter.user), icon_url=inter.user.display_avatar.url)
+            await inter.response.send_message(embed=embed, ephemeral=True)
+            return
+
+        await self.global_error_handler(err)
 
     async def global_error_handler(self, e, *, traceback: str = None):
         """

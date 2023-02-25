@@ -11,9 +11,11 @@ class ClassSemester:
     semester_start: str
     semester_end: str
 
+    @property
     def start_date(self) -> datetime:
         return strtodt(self.semester_start)
 
+    @property
     def end_date(self) -> datetime:
         return strtodt(self.semester_end)
 
@@ -25,15 +27,19 @@ class ClassChannelScaffold:
     class_professor: str
     class_name: str
 
+    @property
     def class_code(self) -> str:
         return f'{self.class_prefix}-{self.class_number}'
 
+    @property
     def full_title(self) -> str:
-        return f'{self.class_code()}: {self.class_name}'
+        return f'{self.class_code}: {self.class_name}'
 
+    @property
     def channel_name(self) -> str:
-        return f'{self.class_code().lower()}-{self.class_professor.lower()}'
+        return f'{self.class_code.lower()}-{self.class_professor.lower()}'
 
+    @property
     def intended_category(self) -> str:
         level = (self.class_number // 1000) * 1000
         return f'{self.class_prefix} {level} LEVELS'

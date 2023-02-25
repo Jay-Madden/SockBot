@@ -132,7 +132,7 @@ class AddClassModal(Modal):
                 embed.description += f'\nThe {role.mention} role has been added to you.'
             embed.add_field(name='Channel', value=channel.mention)
             embed.add_field(name='Instructor', value=similar_class.class_professor)
-            embed.add_field(name='Class Title', value=similar_class.full_title(), inline=False)
+            embed.add_field(name='Class Title', value=similar_class.full_title, inline=False)
             await inter.response.send_message(embed=embed)
             return True
 

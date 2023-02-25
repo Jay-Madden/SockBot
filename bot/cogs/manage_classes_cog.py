@@ -4,7 +4,7 @@ import discord
 import discord.ext.commands as commands
 from discord import app_commands
 
-from bot.consts import Colors, Staff
+from bot.consts import Colors
 from bot.data.class_repository import ClassRepository
 from bot.messaging.events import Events
 from bot.modals.class_modal import AddClassModal, valid_course_num, valid_course_maj
@@ -12,7 +12,6 @@ from bot.sock_bot import SockBot
 from bot.utils.helpers import as_timestamp, error_embed
 
 log = logging.getLogger(__name__)
-TIMEOUT = 60
 
 
 class ManageClassesCog(commands.GroupCog, name='class'):
@@ -30,7 +29,7 @@ class ManageClassesCog(commands.GroupCog, name='class'):
                                 'Here is the information for the next upcoming semester.'
             next_semester = await self.repo.get_next_semester()
             embed.add_field(name='Next Semester', value=next_semester.semester_name)
-            embed.add_field(name='Start Date', value=as_timestamp(next_semester.start_date()))
+            embed.add_field(name='Start Date', value=as_timestamp(next_semester.start_date))
             await inter.response.send_message(embed=embed)
             return
 
@@ -47,10 +46,8 @@ class ManageClassesCog(commands.GroupCog, name='class'):
         await inter.response.send_modal(AddClassModal(self.bot, class_data=(prefix, course_number)))
 
     @app_commands.command(name='insert', description='Insert a class channel.')
+    @app_commands.checks.has_permissions(administrator=True)
     async def insert(self, inter: discord.Interaction, channel: discord.TextChannel, role: discord.Role | None = None):
-        if not await self._perms_check(inter):
-            return
-
         # check if a current semester exists
         if not await self.repo.get_current_semester():
             embed = discord.Embed(title='📔 No Current Semester', color=Colors.Error)
@@ -58,7 +55,7 @@ class ManageClassesCog(commands.GroupCog, name='class'):
                                 'Here is the information for the next upcoming semester.'
             next_semester = await self.repo.get_next_semester()
             embed.add_field(name='Next Semester', value=next_semester.semester_name)
-            embed.add_field(name='Start Date', value=as_timestamp(next_semester.start_date()))
+            embed.add_field(name='Start Date', value=as_timestamp(next_semester.start_date))
             await inter.response.send_message(embed=embed)
             return
 
@@ -71,10 +68,8 @@ class ManageClassesCog(commands.GroupCog, name='class'):
         await inter.response.send_modal(AddClassModal(self.bot, channel=channel, role=role))
 
     @app_commands.command(name='archive', description='Manually archive a class channel.')
+    @app_commands.checks.has_permissions(administrator=True)
     async def class_archive(self, inter: discord.Interaction, channel: discord.TextChannel):
-        if not await self._perms_check(inter):
-            return
-
         # make sure that the given channel is a class channel
         if not (class_channel := await self.repo.search_class_by_channel(channel.id)):
             embed = error_embed(inter.user, f'Channel {channel.mention} is not registered as a class.')
@@ -90,10 +85,8 @@ class ManageClassesCog(commands.GroupCog, name='class'):
         await self.bot.messenger.publish(Events.on_class_archive, class_channel, inter)
 
     @app_commands.command(name='unarchive', description='Manually unarchive a class channel.')
+    @app_commands.checks.has_permissions(administrator=True)
     async def class_unarchive(self, inter: discord.Interaction, channel: discord.TextChannel):
-        if not await self._perms_check(inter):
-            return
-
         # make sure that the given channel is a class channel
         if not (class_channel := await self.repo.search_class_by_channel(channel.id)):
             embed = error_embed(inter.user, f'Channel {channel.mention} is not registered as a class.')
@@ -131,7 +124,7 @@ class ManageClassesCog(commands.GroupCog, name='class'):
         # send the embed with the class details
         embed = discord.Embed(title='📔 Class Details', color=Colors.Purple)
         embed.description = f'The channel {channel.mention} is registered as a class.'
-        embed.add_field(name='Class Title', value=class_channel.full_title(), inline=False)
+        embed.add_field(name='Class Title', value=class_channel.full_title, inline=False)
         embed.add_field(name='Class Role', value=role.mention if role else 'None')
         embed.add_field(name='Class Semester', value=semester.semester_name)
         embed.add_field(name='Archived', value=bool(class_channel.class_archived))
@@ -147,8 +140,8 @@ class ManageClassesCog(commands.GroupCog, name='class'):
             embed = discord.Embed(title='📔 Current Semester', color=Colors.Purple)
             embed.description = 'Here is the information for the current semester.'
             embed.add_field(name='Name', value=current_semester.semester_name, inline=False)
-            embed.add_field(name='Start Date', value=as_timestamp(current_semester.start_date()))
-            embed.add_field(name='End Date', value=as_timestamp(current_semester.end_date()))
+            embed.add_field(name='Start Date', value=as_timestamp(current_semester.start_date))
+            embed.add_field(name='End Date', value=as_timestamp(current_semester.end_date))
             embed.set_footer(text='Start and end dates do not reflect the actual start and end of a semester.')
             await inter.response.send_message(embed=embed)
 
@@ -158,7 +151,7 @@ class ManageClassesCog(commands.GroupCog, name='class'):
             embed.description = 'Currently, there is no semester in session.\n' \
                                 'Here is the information for the upcoming semester.'
             embed.add_field(name='Name', value=next_semester.semester_name)
-            embed.add_field(name='Start Date', value=as_timestamp(next_semester.start_date()))
+            embed.add_field(name='Start Date', value=as_timestamp(next_semester.start_date))
             embed.set_footer(text='Start and end dates do not reflect the actual start and end of a semester.')
             await inter.response.send_message(embed=embed)
 
@@ -168,10 +161,8 @@ class ManageClassesCog(commands.GroupCog, name='class'):
             await inter.response.send_message(embed=embed)
 
     @semester_group.command(name='archive', description='Manually archive a semester.')
+    @app_commands.checks.has_permissions(administrator=True)
     async def semester_archive(self, inter: discord.Interaction, semester_id: str):
-        if not await self._perms_check(inter):
-            return
-
         # check if the semester id is valid and the semester exists
         if not (semester := await self.repo.search_semester(semester_id)):
             embed = error_embed(inter.user, f'A semester with the ID `{semester_id}` does not exist.')
@@ -185,13 +176,6 @@ class ManageClassesCog(commands.GroupCog, name='class'):
             return
 
         await self.bot.messenger.publish(Events.on_semester_archive, semester, inter)
-
-    async def _perms_check(self, inter: discord.Interaction) -> bool:
-        if not Staff.is_staff(inter.user):
-            embed = error_embed(inter.user, 'You do not have the correct permissions to run this command.')
-            await inter.response.send_message(embed=embed, ephemeral=True)
-            return False
-        return True
 
 
 async def setup(bot: SockBot) -> None:
