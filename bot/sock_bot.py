@@ -7,7 +7,7 @@ import typing as t
 from types import ModuleType
 
 import discord
-from discord.app_commands import AppCommandError, MissingPermissions
+from discord.app_commands import AppCommandError, MissingPermissions, CommandInvokeError
 from discord.ext import commands
 
 import bot.bot_secrets as bot_secrets
@@ -174,7 +174,7 @@ class SockBot(commands.Bot):
             await self.messenger.publish(*args, **kwargs)
         except Exception as e:
             tb = traceback.format_exc()
-            await self.global_error_handler(e, traceback=tb)
+            await self.global_error_handler(e, trace=tb)
 
     async def on_command_error(self, ctx, error):
         """
@@ -183,7 +183,7 @@ class SockBot(commands.Bot):
 
         Args:
             ctx ([type]): The context that the command that errored was sent from
-            e ([type]): The unhandled exception
+            error ([type]): The unhandled exception
         """
         if ctx.cog:
             if commands.Cog._get_overridden_method(ctx.cog.cog_command_error) is not None:
@@ -221,15 +221,21 @@ class SockBot(commands.Bot):
             await inter.response.send_message(embed=embed, ephemeral=True)
             return
 
-        await self.global_error_handler(err)
+        if isinstance(err, CommandInvokeError):
+            embed = discord.Embed(title='Command Invoke Error', color=Colors.Error)
+            embed.description = f'An exception has occurred while running the command:\n{err.__cause__}'
+            embed.set_footer(text=str(inter.user), icon_url=inter.user.display_avatar.url)
+            await inter.followup.send(embed=embed, ephemeral=True)
+
+        await self.global_error_handler(err, trace=traceback.format_exc())
 
     async def on_modal_error(self, inter: discord.Interaction, error: Exception) -> None:
         embed = discord.Embed(title='Modal Error', color=Colors.Error)
-        embed.description = 'An error has occurred while submitting and has been reported.'
-        await self.global_error_handler(error)
-        await inter.response.send_message(embed=embed)
+        embed.description = f'An error has occurred while submitting:\n{error.__cause__}'
+        await self.global_error_handler(error, trace=traceback.format_exc())
+        await inter.followup.send(embed=embed)
 
-    async def global_error_handler(self, e, *, traceback: str = None):
+    async def global_error_handler(self, e, *, trace: str = None):
         """
         This is the global error handler for all uncaught exceptions, if an exception is 
         thrown and not handled it will end up here. If a traceback is included in the call then
@@ -237,19 +243,19 @@ class SockBot(commands.Bot):
 
         Args:
             e (Error): The unhandled exception
-            traceback (str) default= None: The string traceback of the throw error
+            trace (str) default= None: The string traceback of the throw error
         """
 
         # log the exception first thing so we can be sure we got it
         log.exception(e)
 
-        if traceback:
+        if trace:
             embed = discord.Embed(title='Unhandled Exception Thrown', color=Colors.Error)
             field_length = 1000
 
             # this code will split the traceback into 1000 char chunks because
             # the embed will fail if we attempt to send more then that
-            tb_split = [traceback[i:i + field_length] for i in range(0, len(traceback), field_length)]
+            tb_split = [trace[i:i + field_length] for i in range(0, len(trace), field_length)]
 
             for i, field in enumerate(tb_split):
                 field_name = 'Traceback' if i == 0 else 'Continued'

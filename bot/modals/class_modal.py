@@ -104,7 +104,7 @@ class AddClassModal(Modal):
                                         class_professor=professor)
         if self._channel:
             await self._bot.messenger.publish(
-                Events.on_class_insert, inter, scaffold, self._channel, self._role, description
+                Events.on_class_insert, inter, scaffold, self._channel, role=self._role, desc=description
             )
         else:
             await self._bot.messenger.publish(Events.on_class_create, inter, scaffold, description)
