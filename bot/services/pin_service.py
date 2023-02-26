@@ -1,5 +1,3 @@
-from typing import Union
-
 import discord
 from discord import RawMessageDeleteEvent, RawReactionActionEvent
 from discord.ext.commands import Context
@@ -52,38 +50,28 @@ class PinService(BaseService):
 
     @BaseService.listener(Events.on_raw_reaction_add)
     async def on_raw_reaction(self, event: RawReactionActionEvent):
+        # using on_raw_reaction_add event because on_reaction_add only works if the message is cached
+        # which ends up missing a lot of reactions for messages that are not cached
         if event.member.bot or event.emoji.name != PIN_REACTION or event.event_type != 'REACTION_ADD':
             return
-        # fetch the message, reaction, user, and pass it to on_reaction_add
+        if not (class_pin := await self.pin_repo.get_open_pin_from_message(event.message_id)):
+            return
+
+        # fetch the channel, message, reaction
         if not (channel := self.bot.guild.get_channel(event.channel_id)):
             return
         message = await channel.fetch_message(event.message_id)
+        react: discord.Reaction | None = None
         for reaction in message.reactions:
             if reaction.emoji == PIN_REACTION:
-                await self.on_reaction_add(reaction, event.member, message)
-                return
+                react = reaction
+                break
+        assert react is not None
 
-    @BaseService.listener(Events.on_reaction_add)
-    async def on_reaction_add(self, react: discord.Reaction,
-                              user: Union[discord.User, discord.Member],
-                              message: discord.Message | None = None):
-        if user.bot:
-            return
-
-        # check if it's the right emoji and if it is, check if the message ID exists in the db
-        emoji = react.emoji if isinstance(react.emoji, str) else react.emoji.name
-        msg = message if message else react.message
-        if emoji != PIN_REACTION:
-            return
-        if not (class_pin := await self.pin_repo.get_pin_from_sockbot(msg)):
-            return
-
-        # check if the reaction count is met OR the user is part of staff (or has admin perms)
-        if react.count >= MIN_PIN_REACTIONS or Staff.is_staff(user):
-            channel = msg.channel
-            # make sure our message to-be-pinned still exists
+        # check if one of our conditions is met to pin the message
+        if react.count >= MIN_PIN_REACTIONS or Staff.is_staff(event.member):
             if not (to_pin := await fetch_optional_message(channel, class_pin.user_message_id)):
-                await msg.delete()
+                await message.delete()
                 await self.pin_repo.delete_pin(class_pin)
                 return
             # check if we have enough space to pin
@@ -94,7 +82,7 @@ class PinService(BaseService):
             # pin the message, update the pin in the db, and delete sockbot's pin request embed
             await to_pin.pin(reason=f'Pinned by vote, started by user with ID {class_pin.pin_requester}')
             await self.pin_repo.set_pinned(class_pin)
-            await msg.delete()
+            await message.delete()
 
     @BaseService.listener(Events.on_raw_message_delete)
     async def on_message_delete(self, payload: RawMessageDeleteEvent):
