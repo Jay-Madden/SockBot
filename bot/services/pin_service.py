@@ -1,19 +1,16 @@
 import discord
 from discord import RawMessageDeleteEvent, RawReactionActionEvent
-from discord.ext.commands import Context
 
-from bot.consts import Staff, Colors
+from bot.consts import Staff
 from bot.data.class_repository import ClassRepository
 from bot.data.pin_repository import PinRepository
 from bot.messaging.events import Events
-from bot.models.class_models import ClassPin
 from bot.services.base_service import BaseService
 from bot.sock_bot import SockBot
 from bot.utils.helpers import fetch_optional_message
 
 PIN_REACTION = '📌'
 MIN_PIN_REACTIONS = 5
-MAX_CONTENT_CHARS = 250
 MAX_PINS_PER_CHANNEL = 50
 
 
@@ -23,30 +20,6 @@ class PinService(BaseService):
         super().__init__(bot)
         self.pin_repo = PinRepository()
         self.class_repo = ClassRepository()
-
-    @BaseService.listener(Events.on_pin_request)
-    async def on_pin_request(self, ctx: Context, message: discord.Message):
-        # format our message content
-        if len(message.content) > MAX_CONTENT_CHARS:
-            content = message.content[:MAX_CONTENT_CHARS] + '...'
-        else:
-            content = message.content
-        # prepare our embed
-        embed = discord.Embed(title='📌 Pin Request', color=Colors.Purple)
-        embed.description = f'{ctx.author.mention} wants to pin a message.\n' \
-                            f'Click the {PIN_REACTION} reaction below to pin this message.'
-        embed.add_field(name='Content', value=content, inline=False)
-        embed.add_field(name='Author', value=message.author.mention)
-        embed.add_field(name='Message Link', value=f'[Link]({message.jump_url})')
-        if len(message.attachments):
-            embed.add_field(name='Files Attached', value=len(message.attachments))
-        sockbot_message = await message.channel.send(embed=embed)
-        await sockbot_message.add_reaction(PIN_REACTION)
-        # create our class pin object and push it to the db
-        class_pin = ClassPin(sockbot_message.id, message.id, message.channel.id, message.author.id, ctx.author.id)
-        await self.pin_repo.insert_pin(class_pin)
-        # finally, delete the command sent to us
-        await ctx.message.delete()
 
     @BaseService.listener(Events.on_raw_reaction_add)
     async def on_raw_reaction(self, event: RawReactionActionEvent):

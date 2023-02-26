@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Callable, Awaitable
 
 import discord
 from discord import Interaction, TextStyle
@@ -68,6 +68,7 @@ class AddClassModal(Modal):
     )
 
     def __init__(self, bot: SockBot,
+                 on_error: Callable[[discord.Interaction, Exception], Awaitable[None]],
                  *,
                  class_data: tuple[str, int] | None = None,
                  channel: discord.TextChannel | None = None,
@@ -76,6 +77,7 @@ class AddClassModal(Modal):
         self._bot = bot
         self._role = role
         self._channel = channel
+        self._on_error = on_error
         self._repo = ClassRepository()
         if class_data or channel:
             self._autofill(channel if channel else class_data)
@@ -106,6 +108,9 @@ class AddClassModal(Modal):
             )
         else:
             await self._bot.messenger.publish(Events.on_class_create, inter, scaffold, description)
+
+    async def on_error(self, interaction: Interaction, error: Exception) -> None:
+        await self._on_error(interaction, error)
 
     async def _search_similar(self, inter: discord.Interaction, pref: str, num: int, prof: str) -> bool:
         """

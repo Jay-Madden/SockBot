@@ -42,6 +42,7 @@ class ClassService(BaseService):
         # move, sort, sync permissions, and push the new class to the repo
         await self._move_and_sort(category, channel)
         await self._sync_perms(class_channel)
+        await channel.send(content=inter.user.mention)
         await self._send_welcome(class_channel, True, inter.user)
         await self.repo.insert_class(class_channel)
 
@@ -181,6 +182,7 @@ class ClassService(BaseService):
         cls.category_id = category.id
         cls.class_role_id = role.id
         cls.semester_id = semester.semester_id
+        await channel.send(content=inter.user.mention)
         await self._send_welcome(cls, False, inter.user)
         await self.repo.update_class(cls)
 

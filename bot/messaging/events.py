@@ -510,17 +510,6 @@ class EventsMeta(type):
         return 'on_class_archive'
 
     @property
-    def on_pin_request(self):
-        """
-        Published when a user requests to pin a message in a class channel.
-
-        Args:
-            ctx: Cog context.
-            message (discord.Message): The message to make a request for.
-        """
-        return 'on_pin_request'
-
-    @property
     def on_class_unarchive(self):
         """
         Published when a user requests to create a previously-created class.

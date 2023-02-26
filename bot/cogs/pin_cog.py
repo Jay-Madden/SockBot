@@ -6,8 +6,12 @@ from bot.consts import Colors
 from bot.data.class_repository import ClassRepository
 from bot.data.pin_repository import PinRepository
 from bot.messaging.events import Events
+from bot.models.class_models import ClassPin
 from bot.sock_bot import SockBot
 from bot.utils.helpers import deletable_error_embed
+
+PIN_REACTION = '📌'
+MAX_CONTENT_CHARS = 250
 
 
 class PinCog(commands.Cog):
@@ -61,7 +65,27 @@ class PinCog(commands.Cog):
             await self.bot.messenger.publish(Events.on_set_deletable, msg=message, author=ctx.author)
             return
 
-        await self.bot.messenger.publish(Events.on_pin_request, ctx, message)
+        # format our message content
+        if len(message.content) > MAX_CONTENT_CHARS:
+            content = message.content[:MAX_CONTENT_CHARS] + '...'
+        else:
+            content = message.content
+        # prepare our embed
+        embed = discord.Embed(title='📌 Pin Request', color=Colors.Purple)
+        embed.description = f'{ctx.author.mention} wants to pin a message.\n\n' \
+                            f'Click the {PIN_REACTION} reaction below to pin this message.'
+        embed.add_field(name='Content', value=content, inline=False)
+        embed.add_field(name='Author', value=message.author.mention)
+        embed.add_field(name='Message Link', value=f'[Link]({message.jump_url})')
+        if len(message.attachments):
+            embed.add_field(name='Files Attached', value=len(message.attachments))
+        sockbot_message = await message.channel.send(embed=embed)
+        await sockbot_message.add_reaction(PIN_REACTION)
+        # create our class pin object and push it to the db
+        class_pin = ClassPin(sockbot_message.id, message.id, message.channel.id, message.author.id, ctx.author.id)
+        await self.pin_repo.insert_pin(class_pin)
+        # finally, delete the command sent to us
+        await ctx.message.delete()
 
 
 async def setup(bot: SockBot) -> None:

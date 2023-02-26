@@ -29,7 +29,7 @@ class PinRepository(BaseRepository):
                                          OR user_message_id = ?
                                          AND pin_pinned = FALSE""", (message_id, message_id))
             dictionary = await self.fetch_first_as_dict(cursor)
-            if not len(dictionary):
+            if not dictionary:
                 return None
             return ClassPin(**dictionary)
 
@@ -43,7 +43,7 @@ class PinRepository(BaseRepository):
         async with aiosqlite.connect(self.resolved_db_path) as db:
             cursor = await db.execute('SELECT * FROM ClassPin WHERE sockbot_message_id = ?', (message_id,))
             dictionary = await self.fetch_first_as_dict(cursor)
-            if not len(dictionary):
+            if not dictionary:
                 return None
             return ClassPin(**dictionary)
 
@@ -57,7 +57,7 @@ class PinRepository(BaseRepository):
         async with aiosqlite.connect(self.resolved_db_path) as db:
             cursor = await db.execute('SELECT * FROM ClassPin WHERE user_message_id = ?', (message_id,))
             dictionary = await self.fetch_first_as_dict(cursor)
-            if not len(dictionary):
+            if not dictionary:
                 return None
             return ClassPin(**dictionary)
 

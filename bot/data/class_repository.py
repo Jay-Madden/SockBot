@@ -26,7 +26,7 @@ class ClassRepository(BaseRepository):
                                          WHERE semester_start <= strftime('%Y-%m-%d %H:%M:%S', datetime('now')) 
                                          AND strftime('%Y-%m-%d %H:%M:%S', datetime('now')) <= semester_end""")
             dictionary = await self.fetch_first_as_dict(cursor)
-            if not len(dictionary):
+            if not dictionary:
                 return None
             return ClassSemester(**dictionary)
 
@@ -38,7 +38,7 @@ class ClassRepository(BaseRepository):
             cursor = await db.execute("""SELECT * FROM ClassSemester
                                          WHERE semester_start > strftime('%Y-%m-%d %H:%M:%S', datetime('now'))""")
             dictionary = await self.fetch_first_as_dict(cursor)
-            if not len(dictionary):
+            if not dictionary:
                 return None
             return ClassSemester(**dictionary)
 
@@ -50,13 +50,12 @@ class ClassRepository(BaseRepository):
             cursor = await db.execute("SELECT * FROM ClassChannel WHERE class_archived IS FALSE")
             return [ClassChannel(**d) for d in await self.fetch_all_as_dict(cursor)]
 
-    async def get_semester_classes(self, semester: ClassSemester, unarchived_only: bool = True) -> list[ClassChannel]:
+    async def get_semester_classes(self, semester: ClassSemester) -> list[ClassChannel]:
         """
         Gets a list of class channels for a specific semester, with the ability to
         only fetch the ones that are currently marked as unarchived.
         """
-        statement = 'SELECT * FROM ClassChannel WHERE semester_id = ?' \
-                    + ' AND class_archived = FALSE' if unarchived_only else ''
+        statement = 'SELECT * FROM ClassChannel WHERE semester_id = ?'
         async with aiosqlite.connect(self.resolved_db_path) as db:
             cursor = await db.execute(statement, (semester.semester_id,))
             return [ClassChannel(**d) for d in await self.fetch_all_as_dict(cursor)]
@@ -70,7 +69,7 @@ class ClassRepository(BaseRepository):
         async with aiosqlite.connect(self.resolved_db_path) as db:
             cursor = await db.execute("SELECT * FROM ClassSemester WHERE semester_id = ?", (semester_id,))
             dictionary = await self.fetch_first_as_dict(cursor)
-            if not len(dictionary):
+            if not dictionary:
                 return None
             return ClassSemester(**dictionary)
 
@@ -86,7 +85,7 @@ class ClassRepository(BaseRepository):
                     AND class_professor = ?""", (prefix, num, prof)
             )
             dictionary = await self.fetch_first_as_dict(cursor)
-            if not len(dictionary):
+            if not dictionary:
                 return None
             return ClassChannel(**dictionary)
 
@@ -98,7 +97,7 @@ class ClassRepository(BaseRepository):
         async with aiosqlite.connect(self.resolved_db_path) as db:
             cursor = await db.execute('SELECT * FROM ClassChannel WHERE channel_id = ?', (channel_id,))
             dictionary = await self.fetch_first_as_dict(cursor)
-            if not len(dictionary):
+            if not dictionary:
                 return None
             return ClassChannel(**dictionary)
 
@@ -110,7 +109,7 @@ class ClassRepository(BaseRepository):
         async with aiosqlite.connect(self.resolved_db_path) as db:
             cursor = await db.execute('SELECT * FROM ClassChannel WHERE class_role_id = ?', (role_id,))
             dictionary = await self.fetch_first_as_dict(cursor)
-            if not len(dictionary):
+            if not dictionary:
                 return None
             return ClassChannel(**dictionary)
 

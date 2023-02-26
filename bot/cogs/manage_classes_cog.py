@@ -43,7 +43,9 @@ class ManageClassesCog(commands.GroupCog, name='class'):
             await inter.response.send_message(embed=embed, ephemeral=True)
             return
 
-        await inter.response.send_modal(AddClassModal(self.bot, class_data=(prefix, course_number)))
+        await inter.response.send_modal(
+            AddClassModal(self.bot, self._on_modal_error, class_data=(prefix, course_number))
+        )
 
     @app_commands.command(name='insert', description='Insert a class channel.')
     @app_commands.checks.has_permissions(administrator=True)
@@ -65,7 +67,49 @@ class ManageClassesCog(commands.GroupCog, name='class'):
             await inter.response.send_message(embed=embed, ephemeral=True)
             return
 
-        await inter.response.send_modal(AddClassModal(self.bot, channel=channel, role=role))
+        await inter.response.send_modal(AddClassModal(self.bot, self._on_modal_error, channel=channel, role=role))
+
+    @app_commands.command(name='role', description='Add or remove a class role from yourself.')
+    async def role(self, inter: discord.Interaction, role: discord.Role):
+        if not await self.repo.search_class_by_role(role):
+            embed = error_embed(inter.user, f'The given role {role.mention} is not a class role.')
+            await inter.response.send_message(embed=embed, ephemeral=True)
+            return
+
+        has_role = inter.user.get_role(role.id) is not None
+
+        embed = discord.Embed(title=f"📔 Class Role {'Removed' if has_role else 'Added'}", color=Colors.Purple)
+        embed.add_field(name='Role', value=f"{role.mention} {':arrow_left:' if has_role else ':arrow_right:'}")
+        embed.add_field(name='User', value=inter.user.mention)
+        if has_role:
+            await inter.user.remove_roles(role, reason='User requested role removed')
+        else:
+            await inter.user.add_roles(role, reason='User requested role')
+
+        await inter.response.send_message(embed=embed)
+
+    @app_commands.command(name='cleanup', description='Add or remove the cleanup role from yourself.')
+    async def cleanup(self, inter: discord.Interaction):
+        cleanup_role: discord.Role | None = None
+        for role in self.bot.guild.roles:
+            if role.name == 'Cleanup':
+                cleanup_role = role
+                break
+
+        if not cleanup_role:
+            cleanup_role = await self.bot.guild.create_role(name='Cleanup', reason='Cleanup role not found.')
+
+        has_role = inter.user.get_role(cleanup_role.id)
+
+        embed = discord.Embed(title=f"📔 Cleanup Role {'Removed' if has_role else 'Added'}", color=Colors.Purple)
+        embed.add_field(name='Role', value=f"{cleanup_role.mention} {':arrow_left:' if has_role else ':arrow_right:'}")
+        embed.add_field(name='User', value=inter.user.mention)
+        if has_role:
+            await inter.user.remove_roles(cleanup_role, reason='Cleanup role removal requested')
+        else:
+            await inter.user.add_roles(cleanup_role, reason='Cleanup role addition requested')
+
+        await inter.response.send_message(embed=embed)
 
     @app_commands.command(name='archive', description='Manually archive a class channel.')
     @app_commands.checks.has_permissions(administrator=True)
@@ -133,8 +177,8 @@ class ManageClassesCog(commands.GroupCog, name='class'):
 
     semester_group = app_commands.Group(name='semester', description='Manage or list a semester.')
 
-    @semester_group.command(name='list', description='Get info on the current or next semester.')
-    async def list(self, inter: discord.Interaction):
+    @semester_group.command(name='info', description='Get info on the current or next semester.')
+    async def info(self, inter: discord.Interaction):
         # check if we are currently in a semester
         if current_semester := await self.repo.get_current_semester():
             embed = discord.Embed(title='📔 Current Semester', color=Colors.Purple)
@@ -176,6 +220,12 @@ class ManageClassesCog(commands.GroupCog, name='class'):
             return
 
         await self.bot.messenger.publish(Events.on_semester_archive, semester, inter)
+
+    async def _on_modal_error(self, inter: discord.Interaction, error: Exception) -> None:
+        embed = discord.Embed(title='Modal Error', color=Colors.Error)
+        embed.description = 'An error has occurred while submitting and has been reported.'
+        await self.bot.global_error_handler(error)
+        await inter.response.send_message(embed=embed)
 
 
 async def setup(bot: SockBot) -> None:
