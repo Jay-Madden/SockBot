@@ -1,8 +1,7 @@
 import logging
+from typing import Any
 
 import aiosqlite
-
-from bot.bot_secrets import BotSecrets
 
 log = logging.getLogger(__name__)
 
@@ -16,7 +15,7 @@ class BaseRepository:
     def __init__(self):
         self.resolved_db_path = f'database/SockBot.db'
 
-    async def fetcthall_as_dict(self, cursor: aiosqlite.Cursor):
+    async def fetch_all_as_dict(self, cursor: aiosqlite.Cursor) -> list[dict[Any, Any]]:
         """
         This function returns a list of dictionaries that contains the row names of the sql query
         as keys in a dictionary instead of the cursor result being index based which
@@ -31,7 +30,7 @@ class BaseRepository:
         return [dict(zip([column[0] for column in cursor.description], row))
                 for row in await cursor.fetchall()]
 
-    async def fetcthall_as_class(self, cursor: aiosqlite.Cursor):
+    async def fetch_all_as_class(self, cursor: aiosqlite.Cursor):
         """
         This function returns a list of objects that contains the row names of the sql query
         as attributes in the object instead of the cursor result being index based which
@@ -46,7 +45,7 @@ class BaseRepository:
         return [type('Query', (), dict(zip([column[0] for column in cursor.description], row)))
                 for row in await cursor.fetchall()]
 
-    async def fetcthone_as_dict(self, cursor: aiosqlite.Cursor):
+    async def fetch_first_as_dict(self, cursor: aiosqlite.Cursor) -> dict[Any, Any]:
         """
         This function returns a dictionary that contains the row names of the sql query
         as keys in a dictionary instead of the cursor result being index based which
@@ -58,9 +57,11 @@ class BaseRepository:
         Returns:
             [dict]: a dictionary with row names as keys
         """
-        return dict(zip([column[0] for column in cursor.description], await cursor.fetchone()))
+        if not (row := await cursor.fetchone()):
+            return {}
+        return dict(zip([column[0] for column in cursor.description], row))
 
-    async def fetcthone_as_class(self, cursor: aiosqlite.Cursor):
+    async def fetch_first_as_class(self, cursor: aiosqlite.Cursor):
         """
         This function returns a class that contains the row names of the sql query
         as attributes of the class instead of the cursor result being index based which

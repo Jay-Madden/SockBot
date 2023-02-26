@@ -1,7 +1,6 @@
 import typing as t
 
 import discord.ext.commands
-from discord.ext.commands.errors import BadArgument
 
 
 def command(name=None, cls=None, **attrs):
@@ -105,6 +104,7 @@ class ExtBase:
         self.long_help = kwargs.get('long_help') or getattr(func, 'long_help', None)
         self.short_help = kwargs.get('short_help') or getattr(func, 'short_help', None)
         self.example = kwargs.get('example') or getattr(func, 'example', None)
+
 
 class SockBotCommand(discord.ext.commands.Command, ExtBase):
 

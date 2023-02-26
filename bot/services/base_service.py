@@ -1,6 +1,8 @@
 import abc
 import inspect
 
+from bot.sock_bot import SockBot
+
 
 class BaseService(abc.ABC):
     """
@@ -9,7 +11,7 @@ class BaseService(abc.ABC):
     this class as a base class
     """
 
-    def __init__(self, bot):
+    def __init__(self, bot: SockBot):
         self.bot = bot
         self.messenger = bot.messenger
 
@@ -29,7 +31,7 @@ class BaseService(abc.ABC):
         pass
 
     @classmethod
-    def Listener(cls, event=None):
+    def listener(cls, event=None):
         """
         The method decorator to allow for service methods to be marked as a callback 
         for application level events
