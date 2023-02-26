@@ -44,7 +44,7 @@ class ManageClassesCog(commands.GroupCog, name='class'):
             return
 
         await inter.response.send_modal(
-            AddClassModal(self.bot, self._on_modal_error, class_data=(prefix, course_number))
+            AddClassModal(self.bot, self.bot.on_modal_error, class_data=(prefix, course_number))
         )
 
     @app_commands.command(name='insert', description='Insert a class channel.')
@@ -67,7 +67,9 @@ class ManageClassesCog(commands.GroupCog, name='class'):
             await inter.response.send_message(embed=embed, ephemeral=True)
             return
 
-        await inter.response.send_modal(AddClassModal(self.bot, self._on_modal_error, channel=channel, role=role))
+        await inter.response.send_modal(
+            AddClassModal(self.bot, self.bot.on_modal_error, channel=channel, role=role)
+        )
 
     @app_commands.command(name='role', description='Add or remove a class role from yourself.')
     async def role(self, inter: discord.Interaction, role: discord.Role):
@@ -220,12 +222,6 @@ class ManageClassesCog(commands.GroupCog, name='class'):
             return
 
         await self.bot.messenger.publish(Events.on_semester_archive, semester, inter)
-
-    async def _on_modal_error(self, inter: discord.Interaction, error: Exception) -> None:
-        embed = discord.Embed(title='Modal Error', color=Colors.Error)
-        embed.description = 'An error has occurred while submitting and has been reported.'
-        await self.bot.global_error_handler(error)
-        await inter.response.send_message(embed=embed)
 
 
 async def setup(bot: SockBot) -> None:

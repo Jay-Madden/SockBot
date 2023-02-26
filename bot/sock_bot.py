@@ -223,6 +223,12 @@ class SockBot(commands.Bot):
 
         await self.global_error_handler(err)
 
+    async def on_modal_error(self, inter: discord.Interaction, error: Exception) -> None:
+        embed = discord.Embed(title='Modal Error', color=Colors.Error)
+        embed.description = 'An error has occurred while submitting and has been reported.'
+        await self.global_error_handler(error)
+        await inter.response.send_message(embed=embed)
+
     async def global_error_handler(self, e, *, traceback: str = None):
         """
         This is the global error handler for all uncaught exceptions, if an exception is 
