@@ -7,11 +7,12 @@ import typing as t
 from types import ModuleType
 
 import discord
+from discord.app_commands import AppCommandError, MissingPermissions
 from discord.ext import commands
 
+import bot.bot_secrets as bot_secrets
 import bot.cogs as cogs
 import bot.services as services
-import bot.bot_secrets as bot_secrets
 from bot.consts import Colors
 from bot.data.database import Database
 from bot.messaging.events import Events
@@ -33,7 +34,7 @@ class SockBot(commands.Bot):
 
         self.messenger = messenger
         self.scheduler = scheduler
-
+        self.guild: discord.Guild | None = None
         self.active_services = {}
 
     async def setup_hook(self) -> None:
@@ -46,7 +47,15 @@ class SockBot(commands.Bot):
         await Database().create_database()
 
     async def on_ready(self) -> None:
+        self.guild = self.guilds[0]
+
         await self.load_services()
+
+        # Sync slash commands - this does not sync commands GLOBALLY - just to self.guilds[0]
+        log.info('Syncing slash commands...')
+        self.tree.error(self.on_app_command_error)
+        self.tree.copy_global_to(guild=self.guild)
+        await self.tree.sync(guild=self.guild)
 
         # Send the ready event AFTER services have been loaded so that the designated channel service is there
         embed = discord.Embed(title='Bot Ready', color=Colors.Purple)
@@ -122,7 +131,7 @@ class SockBot(commands.Bot):
 
     async def on_member_remove(self, user):
         await self.publish_with_error(Events.on_user_removed, user)
-    
+
     async def on_member_ban(self, guild, user):
         await self.publish_with_error(Events.on_member_ban, guild, user)
 
@@ -136,8 +145,7 @@ class SockBot(commands.Bot):
             await self.publish_with_error(Events.on_raw_message_edit, payload)
 
     async def on_message_delete(self, message):
-        if message.author.id != self.user.id:
-            await self.publish_with_error(Events.on_message_delete, message)
+        await self.publish_with_error(Events.on_message_delete, message)
 
     async def on_raw_message_delete(self, payload):
         if payload.cached_message is None:
@@ -148,14 +156,15 @@ class SockBot(commands.Bot):
             await self.publish_with_error(Events.on_reaction_add, reaction, user)
 
     async def on_raw_reaction_add(self, reaction) -> None:
-        log.info(f'Reaction by {reaction.member.display_name} on message:{reaction.message_id}')
+        log.info(f'Reaction by {reaction.user_id} on message: {reaction.message_id}')
+        await self.publish_with_error(Events.on_raw_reaction_add, reaction)
 
     async def on_reaction_remove(self, reaction: discord.Reaction, user: t.Union[discord.User, discord.Member]):
         if user.id != self.user.id:
             await self.publish_with_error(Events.on_reaction_remove, reaction, user)
 
     async def on_raw_reaction_remove(self, reaction) -> None:
-        log.info(f'Reaction by {reaction.member.display_name} on message:{reaction.message_id}')
+        log.info(f'Reaction by {reaction.user_id} on message: {reaction.message_id}')
 
     async def on_member_update(self, before, after):
         await self.publish_with_error(Events.on_member_update, before, after)
@@ -189,10 +198,36 @@ class SockBot(commands.Bot):
 
         embed = discord.Embed(title=f'ERROR: {type(error).__name__}', color=Colors.Error)
         embed.add_field(name='Exception:', value=error)
-        embed.set_footer(text=self.get_full_name(ctx.author), icon_url=ctx.author.avatar.url)
+        embed.set_footer(text=str(ctx.author), icon_url=ctx.author.avatar.url)
         msg = await ctx.channel.send(embed=embed)
         await self.messenger.publish(Events.on_set_deletable, msg=msg, author=ctx.author)
         await self.global_error_handler(error)
+
+    async def on_app_command_error(self, inter: discord.Interaction, err: AppCommandError):
+        """
+        Handler for slash (app) commands. Generally only for handling MissingPermissions,
+        but if a different AppCommandError occurs, it will be passed on to the global
+        error handler.
+
+        Args:
+            inter ([type]): The app command interaction.
+            err ([type]): The app command error.
+        """
+        if isinstance(err, MissingPermissions):
+            embed = discord.Embed(title='Missing Permissions', color=Colors.Error)
+            embed.description = 'Cannot run app command: you are missing permissions.'
+            embed.add_field(name='Permission(s) Missing', value='\n'.join(err.missing_permissions).title())
+            embed.set_footer(text=str(inter.user), icon_url=inter.user.display_avatar.url)
+            await inter.response.send_message(embed=embed, ephemeral=True)
+            return
+
+        await self.global_error_handler(err)
+
+    async def on_modal_error(self, inter: discord.Interaction, error: Exception) -> None:
+        embed = discord.Embed(title='Modal Error', color=Colors.Error)
+        embed.description = 'An error has occurred while submitting and has been reported.'
+        await self.global_error_handler(error)
+        await inter.response.send_message(embed=embed)
 
     async def global_error_handler(self, e, *, traceback: str = None):
         """
@@ -220,13 +255,9 @@ class SockBot(commands.Bot):
                 field_name = 'Traceback' if i == 0 else 'Continued'
                 embed.add_field(name=field_name, value=f'```{field}```', inline=False)
 
-
-    def get_full_name(self, author) -> str:
-        return f'{author.name}#{author.discriminator}'
-
     async def current_prefix(self, ctx):
         prefixes = await self.get_prefix(ctx)
-        return prefixes[2]
+        return prefixes[0]
 
     """
     This is the code to dynamically load all cogs and services defined in the assembly.

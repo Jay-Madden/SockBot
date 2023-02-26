@@ -60,7 +60,7 @@ class PaginateService(BaseService):
         self.reactions = ["⏮️", "⬅️", "➡️", "⏭️"]
 
     # Called When a cog would like to be able to paginate a message
-    @BaseService.Listener(Events.on_set_pageable_text)
+    @BaseService.listener(Events.on_set_pageable_text)
     async def set_text_pageable(self, *,
                                 embed_name: str,
                                 field_title: str,
@@ -86,7 +86,7 @@ class PaginateService(BaseService):
         self.messages[msg.id] = message
         await self.send_scroll_reactions(msg, author, timeout)
 
-    @BaseService.Listener(Events.on_set_pageable_embed)
+    @BaseService.listener(Events.on_set_pageable_embed)
     async def set_embed_pageable(self, *,
                                  pages: t.List[discord.Embed],
                                  author: discord.Member = None,
@@ -127,7 +127,7 @@ class PaginateService(BaseService):
             finally:
                 log.info(f'Message: {msg.id} timed out as pageable')
 
-    @BaseService.Listener(Events.on_reaction_add)
+    @BaseService.listener(Events.on_reaction_add)
     async def change_page(self, reaction: discord.Reaction, user: t.Union[discord.User, discord.Member]):
 
         # check if emoji matches and user has perm to change page

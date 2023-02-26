@@ -475,5 +475,65 @@ class EventsMeta(type):
         """
         return 'on_member_ban'
 
+    @property
+    def on_semester_archive(self):
+        """
+        Published when a semester is manually archived or scheduled to be archived.
+
+        Args:
+            semester (bot.models.class_models.ClassSemester): The semester to archive.
+            inter (discord.Interaction | None = None): The app command interaction.
+        """
+        return 'on_semester_archive'
+
+    @property
+    def on_class_create(self):
+        """
+        Published when a user tries to create a class.
+
+        Args:
+            inter (discord.Interaction): The app command interaction.
+            cls (bot.models.class_models.ClassChannelScaffold): The class channel scaffolding.
+            desc (str | None = None): The optional class description.
+        """
+        return 'on_class_create'
+
+    @property
+    def on_class_archive(self):
+        """
+        Published when a user archives a class.
+
+        Args:
+            class (bot.models.class_models.ClassChannel): The class channel model.
+            inter (discord.Interaction | None = None): The app command interaction.
+        """
+        return 'on_class_archive'
+
+    @property
+    def on_class_unarchive(self):
+        """
+        Published when a user requests to create a previously-created class.
+
+        Args:
+            inter (discord.Interaction): The app command interaction.
+            cls (bot.models.class_models.ClassChannel): The class channel to unarchive.
+        """
+        return 'on_class_unarchive'
+
+    @property
+    def on_class_insert(self):
+        """
+        Published when a user requests an existing channel to be inserted.
+
+        Args:
+            inter (discord.Interaction): The app command interaction.
+            cls (bot.models.class_models.ClassChannelScaffold): The class channel scaffolding.
+            channel (discord.TextChannel): The text channel to pair the class channel with.
+            role (discord.Role | None = None): The optional role to insert with the class.
+            desc (str | None = None): The optional channel description.
+        """
+        return 'on_class_insert'
+
+
 class Events(metaclass=EventsMeta):
     pass

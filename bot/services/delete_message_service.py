@@ -21,7 +21,7 @@ class DeleteMessageService(BaseService):
         self.messages = {}
 
     # Called When a cog would like to be able to delete a message or messages
-    @BaseService.Listener(Events.on_set_deletable)
+    @BaseService.listener(Events.on_set_deletable)
     async def set_message_deletable(self, *,
                                     msg: t.List[discord.Message],
                                     roles: t.List[discord.Role] = [],
@@ -52,7 +52,7 @@ class DeleteMessageService(BaseService):
             finally:
                 log.info(f'Message: {msg[-1].id} timed out as deletable')
 
-    @BaseService.Listener(Events.on_reaction_add)
+    @BaseService.listener(Events.on_reaction_add)
     async def delete_message(self, reaction: discord.Reaction, user: t.Union[discord.User, discord.Member]):
         role_ids = [role.id for role in user.roles]
         delete = False

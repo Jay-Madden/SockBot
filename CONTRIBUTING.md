@@ -25,9 +25,9 @@ ping @Jayy#6249 for permissions to add bots
 
 
 ## Prepare bot for connecting to discord server
-* Click "OAuth2" in the left sidebar
-* In the "scopes" section, check `bot`
-* In the "bot permissions" section, check the following boxes [![perms](https://i.postimg.cc/NFkdvDCY/perms.png)](https://postimg.cc/xNqvKvSF)
+* Click "OAuth2" in the left sidebar and click "URL Generator"
+* In the "scopes" section, check `bot` and `applications.commands`
+* In the "bot permissions" section, check the following boxes ![perms](https://i.imgur.com/7zTDDkN.png)
 * Copy the link from the "scopes" section and open in a new tab/window
 * Select the test server to add the bot to
 
@@ -48,13 +48,15 @@ ping @Jayy#6249 for permissions to add bots
 
 * `BotToken`:(Required) Your discord bots api access token
 * `BotPrefix`:(Required) Your discord bots prefix that it will default to responding too
-* `StartupLogChannelIds`:(Optional) The Id of the channel for the bot to send startup events too
-* `ErrorLogChannelIds`:(Optional) The Id of the channel for the bot to send error events too (recommended if you are doing work with services
+* `StartupLogChannelIds`:(Optional) The ID of the channel for the bot to send startup events too
+* `ErrorLogChannelIds`:(Optional) The ID of the channel for the bot to send error events too (recommended if you are doing work with services)
 * `GifMeToken`:(Optional) GifMe api token
 * `MerriamKey`:(Optional) Merriam api token
 * `WeatherKey`:(Optional) Weather forecast api token
 * `GeocodeKey`:(Optional) Geocode weather service api token
 * `AzureTranslateKey`:(Optional) Azure translation api token
+* `ClassArchiveCategoryIds`:(Optional) Discord category IDs for class archival. Required for `/class` command.
+* `ClassNotifsChannelId`:(Optional) Discord channel ID for class notifications. Required for `/class` command.
 
 ## Setting up the ClemBot.Bot build environment
 Installing Poetry:  
@@ -70,5 +72,4 @@ You can then test-run the bot with the command:
 `poetry run python3 -m bot`  windows: `poetry run py -m bot`
 when you are in the directory `SockBot/`
 
-The bot should show up in the test server and respond to commands (test with `<your_prefix>hello`)
 The bot should show up in the test server and respond to commands (test with `<your_prefix>hello`)

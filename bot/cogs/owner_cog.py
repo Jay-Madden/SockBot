@@ -4,9 +4,7 @@ import logging
 from collections import deque
 
 import aiosqlite
-import discord
 import discord.ext.commands as commands
-import bot
 
 import bot.bot_secrets as bot_secrets
 from bot.consts import DiscordLimits
@@ -83,7 +81,7 @@ class OwnerCog(commands.Cog):
 
         async with aiosqlite.connect(f'file:{db_path}?mode={connect_mode}', uri=True) as db:
             async with db.execute(query) as c:
-                result = await BaseRepository().fetcthall_as_dict(c)
+                result = await BaseRepository().fetch_all_as_dict(c)
 
         json_res = json.dumps(result, **json_params)
 
@@ -92,6 +90,7 @@ class OwnerCog(commands.Cog):
             return
 
         await ctx.send(f'```{json_res}```')
+
 
 async def setup(bot):
     await bot.add_cog(OwnerCog(bot))

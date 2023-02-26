@@ -1,4 +1,7 @@
+import typing
 from enum import Enum, auto
+
+import discord
 
 
 class Colors:
@@ -8,13 +11,22 @@ class Colors:
     Purple = 0x522D80
 
 
-class Staff:
-    jayy: 190858129188192257
-    smathep: 216632498015305729
-    emulator: 187974048167362560
-    bren: 274004148276690944
-    vi: 534558685008101409
-    
+class Staff(Enum):
+    jayy = 190858129188192257
+    smathep = 216632498015305729
+    emulator = 187974048167362560
+    bren = 274004148276690944
+    vi = 534558685008101409
+    jacob = 223241609293201408
+
+    @staticmethod
+    def is_staff(user: typing.Union[discord.User, discord.Member, int]) -> bool:
+        # for testing purposes, I'm going to leave this in:
+        if isinstance(user, discord.Member) and user.guild_permissions.administrator:
+            return True
+        user_id = user.id if isinstance(user, discord.User | discord.Member) else user
+        return user_id in [s.value for s in Staff]
+
 
 class DesignatedChannelBase(Enum):
     pass

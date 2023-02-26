@@ -7,8 +7,8 @@ import discord
 import discord.ext.commands as commands
 from discord.ext.commands.errors import UserInputError
 
+import bot.bot_secrets as bot_secrets
 import bot.extensions as ext
-from bot.bot_secrets import BotSecrets
 from bot.consts import Colors
 from bot.messaging.events import Events
 
@@ -85,10 +85,12 @@ class TranslateCog(commands.Cog):
         self.bot = bot
 
     @ext.group(case_insensitive=True, invoke_without_command=True)
-    @ext.long_help(
-        'Allows you to translate words or sentences by either specifying both the input and output language with the text to translate, or just the output language and the text to translate. run \'translate languages\' to see available languages')
+    @ext.long_help('Allows you to translate words or sentences by either specifying both the input '
+                   'and output language with the text to translate, or just the output language '
+                   'and the text to translate. run \'translate languages\' to see available languages')
     @ext.short_help('Translates words or phrases between two languages')
-    @ext.example(('translate en spanish Hello', 'translate german Hello', 'translate languages', 'translate Spanish German Como estas?'))
+    @ext.example(('translate en spanish Hello', 'translate german Hello', 'translate languages',
+                  'translate Spanish German Como estas?'))
     async def translate(self, ctx, *input: str):
         if len(input) < 2:
             raise UserInputError("Incorrect Number of Arguments. Minimum of 2 arguments")
@@ -101,7 +103,7 @@ class TranslateCog(commands.Cog):
     @translate.command()
     @ext.long_help('Shows all available languages to translate between')
     @ext.short_help('Shows available languages')
-    @ext.example(('translate languages'))
+    @ext.example(['translate languages'])
     async def languages(self, ctx):
         await self.bot.messenger.publish(Events.on_set_pageable_text,
                                          embed_name='Languages',
@@ -109,13 +111,12 @@ class TranslateCog(commands.Cog):
                                          pages=get_language_list(self),
                                          author=ctx.author,
                                          channel=ctx.channel)
-        return
 
     async def translate_given_lang(self, ctx, input):
         input_lang = await get_lang_code(self, ctx, input[0])
         output_lang = await get_lang_code(self, ctx, input[1])
 
-        if input_lang == None or output_lang == None:
+        if input_lang is None or output_lang is None:
             return
 
         text = ' '.join(input[2:])
@@ -133,7 +134,7 @@ class TranslateCog(commands.Cog):
         }]
 
         headers = {
-            'Ocp-Apim-Subscription-Key': BotSecrets.get_instance().azure_translate_key,
+            'Ocp-Apim-Subscription-Key': bot_secrets.secrets.azure_translate_key,
             'Ocp-Apim-Subscription-Region': 'global',
             'Content-type': 'application/json',
             'X-ClientTraceId': TRACE_ID
@@ -151,7 +152,7 @@ class TranslateCog(commands.Cog):
 
     async def translate_detect_lang(self, ctx, input):
         output_lang = await get_lang_code(self, ctx, input[0])
-        if output_lang == None:
+        if output_lang is None:
             return
 
         text = ' '.join(input[1:])
@@ -169,7 +170,7 @@ class TranslateCog(commands.Cog):
         }]
 
         headers = {
-            'Ocp-Apim-Subscription-Key': BotSecrets.get_instance().azure_translate_key,
+            'Ocp-Apim-Subscription-Key': bot_secrets.secrets.azure_translate_key,
             'Ocp-Apim-Subscription-Region': 'global',
             'Content-type': 'application/json',
             'X-ClientTraceId': TRACE_ID
@@ -185,9 +186,9 @@ class TranslateCog(commands.Cog):
         name = 'Translated to ' + LANGUAGE_SHORT_CODE_TO_NAME[response[0]['translations'][0]['to'].lower()]
         embed.add_field(name=name, value=response[0]['translations'][0]['text'], inline=False)
         embed.add_field(name='Confidence Level:', value=response[0]['detectedLanguage']['score'], inline=True)
-        embed.add_field(name='Detected Language:', value=LANGUAGE_SHORT_CODE_TO_NAME[response[0]['detectedLanguage']['language']], inline=True)
+        embed.add_field(name='Detected Language:',
+                        value=LANGUAGE_SHORT_CODE_TO_NAME[response[0]['detectedLanguage']['language']], inline=True)
         await ctx.send(embed=embed)
-        return
 
 
 def is_valid_lang_code(input: str):
