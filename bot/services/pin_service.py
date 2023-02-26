@@ -1,7 +1,7 @@
 from typing import Union
 
 import discord
-from discord import RawMessageDeleteEvent
+from discord import RawMessageDeleteEvent, RawReactionActionEvent
 from discord.ext.commands import Context
 
 from bot.consts import Staff, Colors
@@ -26,7 +26,7 @@ class PinService(BaseService):
         self.pin_repo = PinRepository()
         self.class_repo = ClassRepository()
 
-    @BaseService.Listener(Events.on_pin_request)
+    @BaseService.listener(Events.on_pin_request)
     async def on_pin_request(self, ctx: Context, message: discord.Message):
         # format our message content
         if len(message.content) > MAX_CONTENT_CHARS:
@@ -50,33 +50,53 @@ class PinService(BaseService):
         # finally, delete the command sent to us
         await ctx.message.delete()
 
-    @BaseService.Listener(Events.on_reaction_add)
-    async def on_reaction_add(self, react: discord.Reaction, user: Union[discord.User, discord.Member]):
-        # check if it's the right emoji and if it is, check if the message ID exists in the db
-        if react.emoji != PIN_REACTION:
+    @BaseService.listener(Events.on_raw_reaction_add)
+    async def on_raw_reaction(self, event: RawReactionActionEvent):
+        if event.member.bot or event.emoji.name != PIN_REACTION or event.event_type != 'REACTION_ADD':
             return
-        if not (class_pin := await self.pin_repo.get_pin_from_sockbot(react.message)):
+        # fetch the message, reaction, user, and pass it to on_reaction_add
+        if not (channel := self.bot.guild.get_channel(event.channel_id)):
+            return
+        message = await channel.fetch_message(event.message_id)
+        for reaction in message.reactions:
+            if reaction.emoji == PIN_REACTION:
+                await self.on_reaction_add(reaction, event.member, message)
+                return
+
+    @BaseService.listener(Events.on_reaction_add)
+    async def on_reaction_add(self, react: discord.Reaction,
+                              user: Union[discord.User, discord.Member],
+                              message: discord.Message | None = None):
+        if user.bot:
+            return
+
+        # check if it's the right emoji and if it is, check if the message ID exists in the db
+        emoji = react.emoji if isinstance(react.emoji, str) else react.emoji.name
+        msg = message if message else react.message
+        if emoji != PIN_REACTION:
+            return
+        if not (class_pin := await self.pin_repo.get_pin_from_sockbot(msg)):
             return
 
         # check if the reaction count is met OR the user is part of staff (or has admin perms)
         if react.count >= MIN_PIN_REACTIONS or Staff.is_staff(user):
-            channel = react.message.channel
+            channel = msg.channel
             # make sure our message to-be-pinned still exists
             if not (to_pin := await fetch_optional_message(channel, class_pin.user_message_id)):
-                await react.message.delete()
+                await msg.delete()
                 await self.pin_repo.delete_pin(class_pin)
                 return
             # check if we have enough space to pin
             pinned_messages = await channel.pins()
             # unpin the oldest pin if there is no room
             if len(pinned_messages) == MAX_PINS_PER_CHANNEL:
-                await pinned_messages[0].unpin(reason='Unpinned to make room.')
+                await pinned_messages[-1].unpin(reason='Unpinned to make room.')
             # pin the message, update the pin in the db, and delete sockbot's pin request embed
             await to_pin.pin(reason=f'Pinned by vote, started by user with ID {class_pin.pin_requester}')
             await self.pin_repo.set_pinned(class_pin)
-            await react.message.delete()
+            await msg.delete()
 
-    @BaseService.Listener(Events.on_raw_message_delete)
+    @BaseService.listener(Events.on_raw_message_delete)
     async def on_message_delete(self, payload: RawMessageDeleteEvent):
         # using the on_raw_message_delete event because on_message_delete ignores SockBot's messages being deleted
         # check if the message was in our db (either sockbot's embed or to-be-pinned message)
@@ -84,7 +104,7 @@ class PinService(BaseService):
             return
         await self.pin_repo.delete_pin(class_pin)
 
-    @BaseService.Listener(Events.on_guild_channel_delete)
+    @BaseService.listener(Events.on_guild_channel_delete)
     async def on_channel_delete(self, channel: discord.TextChannel):
         for pin in await self.pin_repo.get_pins_from_channel(channel):
             await self.pin_repo.delete_pin(pin)

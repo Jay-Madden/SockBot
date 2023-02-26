@@ -13,7 +13,7 @@ class MessageHandlingService(BaseService):
     def __init__(self, *, bot):
         super().__init__(bot)
 
-    @BaseService.Listener(Events.on_guild_message_received)
+    @BaseService.listener(Events.on_guild_message_received)
     async def on_guild_message_received(self, message: discord.Message) -> None:
         # Primary entry point for handling commands
         await self.bot.process_commands(message)

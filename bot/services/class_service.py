@@ -25,7 +25,7 @@ class ClassService(BaseService):
         self.messages: set[int] = set()
         self.repo = ClassRepository()
 
-    @BaseService.Listener(Events.on_class_create)
+    @BaseService.listener(Events.on_class_create)
     async def on_class_create(self, inter: discord.Interaction, cls: ClassChannelScaffold, desc: str | None = None):
         if not (semester := await self._check_semester(inter)):
             return
@@ -58,7 +58,7 @@ class ClassService(BaseService):
         await self._get_notifs_channel().send(embed=embed)
         await inter.followup.send(embed=embed)
 
-    @BaseService.Listener(Events.on_class_insert)
+    @BaseService.listener(Events.on_class_insert)
     async def on_class_insert(self,
                               inter: discord.Interaction,
                               cls: ClassChannelScaffold,
@@ -97,7 +97,7 @@ class ClassService(BaseService):
         await self._get_notifs_channel().send(embed=embed)
         await inter.followup.send(embed=embed)
 
-    @BaseService.Listener(Events.on_semester_archive)
+    @BaseService.listener(Events.on_semester_archive)
     async def on_semester_archive(self, semester: ClassSemester, inter: discord.Interaction | None = None):
         # go through each channel we have in the semester that is unarchived and archive it
         if inter:
@@ -120,7 +120,7 @@ class ClassService(BaseService):
         if inter:
             await inter.followup.send(embed=embed, ephemeral=True)
 
-    @BaseService.Listener(Events.on_class_archive)
+    @BaseService.listener(Events.on_class_archive)
     async def on_class_archive(self, cls: ClassChannel, inter: discord.Interaction | None = None) -> str | None:
         if inter:
             await inter.response.defer(thinking=True)
@@ -159,7 +159,7 @@ class ClassService(BaseService):
         # return the mention of the channel being archived, used by self.on_semester_archive()
         return channel.mention
 
-    @BaseService.Listener(Events.on_class_unarchive)
+    @BaseService.listener(Events.on_class_unarchive)
     async def on_class_unarchive(self, inter: discord.Interaction, cls: ClassChannel):
         if not (semester := await self._check_semester(inter)):
             return None
@@ -197,7 +197,7 @@ class ClassService(BaseService):
         await inter.followup.send(embed=embed)
         await self._get_notifs_channel().send(embed=embed)
 
-    @BaseService.Listener(Events.on_guild_channel_delete)
+    @BaseService.listener(Events.on_guild_channel_delete)
     async def on_channel_delete(self, channel: discord.TextChannel):
         # check if the deleted channel was a class channel
         if not (class_channel := await self.repo.search_class_by_channel(channel)):
@@ -221,7 +221,7 @@ class ClassService(BaseService):
         # send our embed to the notifications channel
         await self._get_notifs_channel().send(embed=embed)
 
-    @BaseService.Listener(Events.on_guild_role_delete)
+    @BaseService.listener(Events.on_guild_role_delete)
     async def on_role_delete(self, role: discord.Role):
         if not (class_channel := await self.repo.search_class_by_role(role)):
             return
@@ -232,7 +232,7 @@ class ClassService(BaseService):
             class_channel.class_role_id = None
             await self.repo.update_class(class_channel)
 
-    @BaseService.Listener(Events.on_reaction_add)
+    @BaseService.listener(Events.on_reaction_add)
     async def on_reaction_add(self, react: discord.Reaction, user: discord.Member):
         if react.emoji != WELCOME_MESSAGE_REACTION:
             return
@@ -244,7 +244,7 @@ class ClassService(BaseService):
             return
         await user.add_roles(role, reason='Class channel reaction add.')
 
-    @BaseService.Listener(Events.on_reaction_remove)
+    @BaseService.listener(Events.on_reaction_remove)
     async def on_reaction_remove(self, react: discord.Reaction, user: discord.Member):
         if react.emoji != WELCOME_MESSAGE_REACTION:
             return
@@ -256,7 +256,7 @@ class ClassService(BaseService):
             return
         await user.remove_roles(role, reason='Class channel reaction remove.')
 
-    @BaseService.Listener(Events.on_message_delete)
+    @BaseService.listener(Events.on_message_delete)
     async def on_message_delete(self, message: discord.Message):
         if message.id in self.messages:
             self.messages.remove(message.id)

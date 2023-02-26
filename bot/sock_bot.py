@@ -145,8 +145,7 @@ class SockBot(commands.Bot):
             await self.publish_with_error(Events.on_raw_message_edit, payload)
 
     async def on_message_delete(self, message):
-        if message.author.id != self.user.id:
-            await self.publish_with_error(Events.on_message_delete, message)
+        await self.publish_with_error(Events.on_message_delete, message)
 
     async def on_raw_message_delete(self, payload):
         if payload.cached_message is None:
@@ -158,6 +157,7 @@ class SockBot(commands.Bot):
 
     async def on_raw_reaction_add(self, reaction) -> None:
         log.info(f'Reaction by {reaction.user_id} on message: {reaction.message_id}')
+        await self.publish_with_error(Events.on_raw_reaction_add, reaction)
 
     async def on_reaction_remove(self, reaction: discord.Reaction, user: t.Union[discord.User, discord.Member]):
         if user.id != self.user.id:
