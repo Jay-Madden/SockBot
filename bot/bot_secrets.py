@@ -213,7 +213,7 @@ class BotSecrets:
         self.class_archive_category_ids = [
             int(n) for n in os.environ.get("CLASS_ARCHIVE_CATEGORY_IDS").split(",")  # type: ignore
         ]
-        self.class_notifs_channel_id = os.environ.get("CLASS_NOTIFS_CHANNEL_ID")  # type: ignore
+        self.class_notifs_channel_id = int(os.environ.get("CLASS_NOTIFS_CHANNEL_ID"))  # type: ignore
 
         log.info("Production keys loaded")
 
