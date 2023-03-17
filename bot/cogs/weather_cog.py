@@ -10,7 +10,7 @@ import discord
 import discord.ext.commands as commands
 
 import bot.extensions as ext
-from bot.bot_secrets import BotSecrets
+import bot.bot_secrets as bot_secrets
 from bot.consts import Colors
 from bot.messaging.events import Events
 
@@ -169,8 +169,8 @@ class WeatherCog(commands.Cog):
         # Geocoding URL
         url_Geo_API = f'{URL_GEO}{loc}'
 
-        self.geocode_api_key = BotSecrets.get_instance().geocode_key
-        self.weather_api_key = BotSecrets.get_instance().weather_key
+        self.geocode_api_key = bot_secrets.secrets.geocode_key
+        self.weather_api_key = bot_secrets.secrets.weather_key
 
         geo_queryparams = {
             'auth': self.geocode_api_key,
