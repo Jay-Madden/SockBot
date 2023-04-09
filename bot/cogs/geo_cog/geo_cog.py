@@ -1,6 +1,11 @@
+# Vineet Saraf
+# April 6th, 2023
+
 import os
 import random
 import shutil
+
+import math
 
 import bot.cogs.geo_cog.flagdict as flagdict
 import discord
@@ -11,9 +16,12 @@ import logging
 import discord.ext.commands as commands
 import bot.extensions as ext
 import bot.bot_secrets as bot_secrets
+import sqlite3
 
 from timeit import default_timer as timer
 from discord.ui import Button, View
+
+from bot.cogs.geo_cog import database
 from bot.sock_bot import SockBot
 from bot.cogs.geo_cog.streetviewrandomizer.StreetViewRandom import StreetViewRandom
 
@@ -54,6 +62,8 @@ class GeoGuessCOG(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self._last_member = None
+
+    TEST_SCORE: int = 6969
 
     intents = discord.Intents.default()
     intents.message_content = True
@@ -129,7 +139,7 @@ class GeoGuessCOG(commands.Cog):
         newEmbed.set_author(name="Geoguesser by yeetusfeetus#9414",
                             icon_url="https://cdn.discordapp.com/attachments/782728868179607603/1087563023243300884/authorimg.png")
 
-        newEmbed.set_footer(text=f"{round(apirestime)} ms",
+        newEmbed.set_footer(text=f"{round(apirestime)} ms. Use \"?geoguess lb\" for the leaderboard.",
                             icon_url="https://cdn.discordapp.com/attachments/782728868179607603/1087564659537756201/Logo-google-map-design-on-transparent-background-PNG.png")
 
         # Disable buttons when too far zoomed in or zoomed out
@@ -156,13 +166,23 @@ class GeoGuessCOG(commands.Cog):
             newEmbed.set_thumbnail(url='attachment://westward.png')
         return {'newEmbed': newEmbed, 'file': file}
 
+    @staticmethod
+    def decay_score(start_score, start, end):
+        return int(start_score*math.exp((-1/28)*(end - start)))
+
     # Main command for running the game.
     @ext.command()
-    @commands.cooldown(1, 0, commands.BucketType.user)
+    @commands.cooldown(1, 180, commands.BucketType.user)
     @ext.example("?geoguess game")
     @ext.long_help("Starts a game round.")
     @ext.short_help("Play game.")
     async def game(self, ctx, *, member: discord.Member = None) -> None:
+        await ctx.send('I\'m blindfolded throwing darts at the map, gimme a sec...', delete_after=5)
+
+        # Database methods:
+        connection = database.connect()
+        database.create_tables(connection)
+
         quota:    int = 10
         filename: str = 'StreetView.jpg'
         pic_base: str = 'https://maps.googleapis.com/maps/api/streetview?'
@@ -170,8 +190,6 @@ class GeoGuessCOG(commands.Cog):
 
         # Pick a random country to look at
         c, r = random.choice(list(StreetViewRandom.Countries.items()))
-        # c = "CBA"
-        # r = 15
 
         # Establish default values
         args = {
@@ -403,23 +421,37 @@ class GeoGuessCOG(commands.Cog):
 
         @commands.Cog.listener()
         async def correct(interaction) -> None:
+            endScore: float = timer()
+            final_Score: int = self.decay_score(initial_score, scoreDecay, endScore)
             user_id = interaction.user.id
             if user_id in users_clicked:
                 return
+
             b1.disabled = True
             b2.disabled = True
             b3.disabled = True
             b4.disabled = True
+
             o1.style = discord.ButtonStyle.green
             o2.style = discord.ButtonStyle.red
             o3.style = discord.ButtonStyle.red
             o4.style = discord.ButtonStyle.red
             o5.style = discord.ButtonStyle.red
+
+            if database.get_best_preparation_for_member(connection, user_id) is None:
+                print("NO USER FOUND")
+                database.add_into(connection, interaction.user.name, user_id, 4, final_Score)
+            else:
+                print(database.get_existing_score(connection, user_id)[0])
+                existingScore: int = database.get_existing_score(connection, user_id)[0] + final_Score
+                database.update_score(connection, existingScore, user_id)
+                print("USER EXISTS ALREADY")
+            print("----------\n")
             await interaction.response.edit_message(view=view)
             msg = await interaction.original_response()
             time.sleep(5)
             await msg.edit(view=None)
-            await interaction.followup.send(content=f"<@!{user_id}> got the right answer of **{ cityname }{ self.getcountryname(execute['ISO3Digits']) }**")
+            await interaction.followup.send(content=f"<@!{user_id}> got the right answer of **{ cityname }{ self.getcountryname(execute['ISO3Digits']) }** and won **{final_Score} points.** ")
 
         async def o2incorrect(interaction) -> None:
             user_id = interaction.user.id
@@ -472,8 +504,36 @@ class GeoGuessCOG(commands.Cog):
             view.add_item(i)
 
         await ctx.send(files=[file, N['file']], embed=N['newEmbed'], view=(view if quota > 0 else None))
+        initial_score: int = 5000
+        scoreDecay: float = timer()
         # Clean asset folder when done
-        os.remove(f'bot/cogs/geo_cog/tempAssets/{filename}')
+        shutil.rmtree('bot/cogs/geo_cog/tempAssets/')
+        os.mkdir('bot/cogs/geo_cog/tempAssets/')
+
+
+    @ext.command()
+    @commands.cooldown(1, 30, commands.BucketType.user)
+    @ext.example("?geoguess lb")
+    @ext.long_help("Displays the leaderboard")
+    @ext.short_help("leaderboard")
+    async def lb(self, ctx, *, member: discord.Member = None) -> None:
+        # Database methods:
+        connection = database.connect()
+        database.create_tables(connection)
+        print("-----------------\n")
+        print(database.sort_and_return(connection))
+        print("-----------------\n")
+
+
+        newEmbed: discord.Embed = discord.Embed(color=0x00FF61)
+        newEmbed.set_author(name="Discord Geoguessr by yeetusfeetus#9414",
+                            icon_url="https://cdn.discordapp.com/attachments/782728868179607603/1087563023243300884/authorimg.png")
+        LBoutput: str = ""
+        for i in range(10):
+            LBoutput += f"**{i+1}.** <@!{database.sort_and_return(connection)[i][2]}> - **{database.sort_and_return(connection)[i][4]} points**\n"
+
+        newEmbed.add_field(name="Leaderboard", value=LBoutput, inline=False)
+        await ctx.send(embed=newEmbed)
 
 
 async def setup(bot: SockBot):
