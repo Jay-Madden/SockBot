@@ -136,7 +136,7 @@ class GeoGuessCOG(commands.Cog):
         file = discord.File('bot/cogs/geo_cog/northward.png',
                             filename='northward.png')
 
-        newEmbed.set_author(name="Geoguesser by yeetusfeetus#9414",
+        newEmbed.set_author(name="Geoguessr by yeetusfeetus#9414",
                             icon_url="https://cdn.discordapp.com/attachments/782728868179607603/1087563023243300884/authorimg.png")
 
         newEmbed.set_footer(text=f"{round(apirestime)} ms. Use \"?geoguess lb\" for the leaderboard.",
