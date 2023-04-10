@@ -529,7 +529,12 @@ class GeoGuessCOG(commands.Cog):
         newEmbed.set_author(name="Discord Geoguessr by yeetusfeetus#9414",
                             icon_url="https://cdn.discordapp.com/attachments/782728868179607603/1087563023243300884/authorimg.png")
         LBoutput: str = ""
-        for i in range(10):
+
+        database.add_into(connection, "sample", 6664206969, 4, 1000)
+
+        entries: int = 10 if database.return_size(connection)[0][0] >= 10 else database.return_size(connection)[0][0]
+
+        for i in range(entries):
             LBoutput += f"**{i+1}.** <@!{database.sort_and_return(connection)[i][2]}> - **{database.sort_and_return(connection)[i][4]} points**\n"
 
         newEmbed.add_field(name="Leaderboard", value=LBoutput, inline=False)

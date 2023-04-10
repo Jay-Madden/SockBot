@@ -30,9 +30,15 @@ GET_USER_SCORE = """
                     WHERE user_id = ? 
                     LIMIT 1;
                 """
+SIZE = """SELECT COUNT(*) 
+          FROM leaderboard;"""
 
 def connect():
     return sqlite3.connect("bot/cogs/geo_cog/database.db")
+
+def return_size(connection):
+    with connection:
+        return connection.execute(SIZE).fetchall()
 
 def update_score(connection, score, user_id):
     with connection:
