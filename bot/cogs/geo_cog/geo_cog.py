@@ -520,17 +520,11 @@ class GeoGuessCOG(commands.Cog):
         # Database methods:
         connection = database.connect()
         database.create_tables(connection)
-        print("-----------------\n")
-        print(database.sort_and_return(connection))
-        print("-----------------\n")
-
 
         newEmbed: discord.Embed = discord.Embed(color=0x00FF61)
         newEmbed.set_author(name="Discord Geoguessr by yeetusfeetus#9414",
                             icon_url="https://cdn.discordapp.com/attachments/782728868179607603/1087563023243300884/authorimg.png")
         LBoutput: str = ""
-
-        database.add_into(connection, "sample", 6664206969, 4, 1000)
 
         entries: int = 10 if database.return_size(connection)[0][0] >= 10 else database.return_size(connection)[0][0]
 
