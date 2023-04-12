@@ -33,8 +33,17 @@ GET_USER_SCORE = """
 SIZE = """SELECT COUNT(*) 
           FROM leaderboard;"""
 
+RANK = """select *, ROW_NUMBER() OVER(ORDER BY score) AS RANK
+          from leaderboard 
+          where user_id = ? ;
+          """
+
 def connect():
     return sqlite3.connect("bot/cogs/geo_cog/database.db")
+
+def get_rank(connection, userID):
+    with connection:
+        return connection.execute(RANK, (userID,)).fetchall()
 
 def return_size(connection):
     with connection:

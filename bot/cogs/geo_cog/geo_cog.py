@@ -528,12 +528,23 @@ class GeoGuessCOG(commands.Cog):
 
         entries: int = 10 if database.return_size(connection)[0][0] >= 10 else database.return_size(connection)[0][0]
 
+        Rank: Button = Button(label="What's my rank?", style=discord.ButtonStyle.primary, row=1)
+
+        async def view_rank(interaction) -> None:
+            MSG: str = f'You are ranked **#{database.get_rank( connection, interaction.user.id )[0][5]}** and you have **{database.sort_and_return(connection)[ database.get_rank(connection,interaction.user.id)[0][5] - 1 ][4] } points**'
+            await interaction.response.send_message(MSG, ephemeral=True)
+
+        view = View(timeout=None)
+        Rank.callback = view_rank
+        view.add_item(Rank)
+
         for i in range(entries):
             LBoutput += f"**{i+1}.** <@!{database.sort_and_return(connection)[i][2]}> - **{database.sort_and_return(connection)[i][4]} points**\n"
 
         newEmbed.add_field(name="Leaderboard", value=LBoutput, inline=False)
-        await ctx.send(embed=newEmbed)
-
+        await ctx.send(embed=newEmbed, view=view)
+        time.sleep(2)
+        Rank.disabled = True
 
 async def setup(bot: SockBot):
     await bot.add_cog(GeoGuessCOG(bot))
