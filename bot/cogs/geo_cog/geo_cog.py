@@ -4,9 +4,7 @@
 import os
 import random
 import shutil
-
 import math
-
 import bot.cogs.geo_cog.flagdict as flagdict
 import discord
 import requests
@@ -16,14 +14,13 @@ import logging
 import discord.ext.commands as commands
 import bot.extensions as ext
 import bot.bot_secrets as bot_secrets
-import sqlite3
 
 from timeit import default_timer as timer
 from discord.ui import Button, View
-
-from bot.cogs.geo_cog import database
+#from bot.cogs.geo_cog import database
 from bot.sock_bot import SockBot
 from bot.cogs.geo_cog.streetviewrandomizer.StreetViewRandom import StreetViewRandom
+from bot.data.geo_repository import geo_repository
 
 log = logging.getLogger(__name__)
 
@@ -62,6 +59,7 @@ class GeoGuessCOG(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self._last_member = None
+        self.repo = geo_repository()
 
     TEST_SCORE: int = 6969
 
@@ -178,10 +176,6 @@ class GeoGuessCOG(commands.Cog):
     @ext.short_help("Play game.")
     async def game(self, ctx, *, member: discord.Member = None) -> None:
         await ctx.send('I\'m blindfolded throwing darts at the map, gimme a sec...', delete_after=5)
-
-        # Database methods:
-        connection = database.connect()
-        database.create_tables(connection)
 
         quota:    int = 10
         filename: str = 'StreetView.jpg'
@@ -423,7 +417,7 @@ class GeoGuessCOG(commands.Cog):
         async def correct(interaction) -> None:
             endScore: float = timer()
             final_Score: int = self.decay_score(initial_score, scoreDecay, endScore)
-            user_id = interaction.user.id
+            user_id: int = interaction.user.id
             if user_id in users_clicked:
                 return
 
@@ -438,15 +432,14 @@ class GeoGuessCOG(commands.Cog):
             o4.style = discord.ButtonStyle.red
             o5.style = discord.ButtonStyle.red
 
-            if database.get_best_preparation_for_member(connection, user_id) is None:
+            if await self.repo.get_best_preparation_for_member(user_id) is None:
                 print("NO USER FOUND")
-                database.add_into(connection, interaction.user.name, user_id, 4, final_Score)
+                await self.repo.add_into(interaction.user.name, user_id, 4, final_Score)
             else:
-                print(database.get_existing_score(connection, user_id)[0])
-                existingScore: int = database.get_existing_score(connection, user_id)[0] + final_Score
-                database.update_score(connection, existingScore, user_id)
                 print("USER EXISTS ALREADY")
-            print("----------\n")
+                existingScore: int = (await self.repo.get_existing_score(user_id)).get('score') + final_Score
+                await self.repo.update_score(existingScore, user_id)
+
             await interaction.response.edit_message(view=view)
             msg = await interaction.original_response()
             time.sleep(5)
@@ -517,34 +510,38 @@ class GeoGuessCOG(commands.Cog):
     @ext.long_help("Displays the leaderboard")
     @ext.short_help("leaderboard")
     async def lb(self, ctx, *, member: discord.Member = None) -> None:
-        # Database methods:
-        connection = database.connect()
-        database.create_tables(connection)
-
         newEmbed: discord.Embed = discord.Embed(color=0x00FF61)
         newEmbed.set_author(name="Discord Geoguessr by yeetusfeetus#9414",
                             icon_url="https://cdn.discordapp.com/attachments/782728868179607603/1087563023243300884/authorimg.png")
         LBoutput: str = ""
 
-        entries: int = 10 if database.return_size(connection)[0][0] >= 10 else database.return_size(connection)[0][0]
-
-        Rank: Button = Button(label="What's my rank?", style=discord.ButtonStyle.primary, row=1)
+        entries: int = 10 if (await self.repo.return_size())[0].get('COUNT(*)') >= 10 else (await self.repo.return_size())[0].get('COUNT(*)')
+        RankBTN: Button = Button(label="What's my rank?", style=discord.ButtonStyle.primary, row=1)
 
         async def view_rank(interaction) -> None:
-            MSG: str = f'You are ranked **#{database.get_rank( connection, interaction.user.id )[0][5]}** and you have **{database.sort_and_return(connection)[ database.get_rank(connection,interaction.user.id)[0][5] - 1 ][4] } points**'
-            await interaction.response.send_message(MSG, ephemeral=True)
+            if await self.repo.get_best_preparation_for_member(interaction.user.id) is not None:
+                Size: int = (await self.repo.return_size())[0].get('COUNT(*)')
+                Rank: int = 0
+                for i in range(Size):
+                    if ( (await self.repo.get_rank())[i].get('user_id') == interaction.user.id ):
+                        Rank = (await self.repo.get_rank())[i].get('RANK')
+
+                Score: int = (await self.repo.sort_and_return())[ Rank - 1 ].get('score')
+                MSG: str = f'You are ranked **#{Rank}** and you have **{Score} points**'
+                await interaction.response.send_message(MSG, ephemeral=True)
+            else:
+                await interaction.response.send_message(f'You aren\'t even on the board, try a game out! Run ?geoguess game', ephemeral=True)
 
         view = View(timeout=None)
-        Rank.callback = view_rank
-        view.add_item(Rank)
+        RankBTN.callback = view_rank
+        view.add_item(RankBTN)
 
         for i in range(entries):
-            LBoutput += f"**{i+1}.** <@!{database.sort_and_return(connection)[i][2]}> - **{database.sort_and_return(connection)[i][4]} points**\n"
+            LBoutput += f"**{i+1}.** <@!{(await self.repo.sort_and_return())[i].get('user_id')}> - **{(await self.repo.sort_and_return())[i].get('score')} points**\n"
 
         newEmbed.add_field(name="Leaderboard", value=LBoutput, inline=False)
         await ctx.send(embed=newEmbed, view=view)
         time.sleep(2)
-        Rank.disabled = True
 
 async def setup(bot: SockBot):
     await bot.add_cog(GeoGuessCOG(bot))

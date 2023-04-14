@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from datetime import datetime
-
 from bot.utils.helpers import strtodt
 
 
@@ -63,3 +62,11 @@ class ClassPin:
     pin_owner: int
     pin_requester: int
     pin_pinned: bool = False
+
+@dataclass
+class leaderboard:
+    id: int
+    name: str
+    user_id: int
+    rank: int
+    score: int
