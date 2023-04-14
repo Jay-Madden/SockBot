@@ -43,7 +43,7 @@ class StreetViewRandom:
         API = StreetViewStaticApi(args['api_key'])
 
         gdf = gpd.read_file("bot/cogs/geo_cog/streetviewrandomizer/TM_WORLD_BORDERS-0.3/TM_WORLD_BORDERS-0.3.shp")
-        f = open("transcribedData.txt", "a")
+        f = open("bot/cogs/geo_cog/streetviewrandomizer/TM_WORLD_BORDERS-0.3/transcribedData.txt", "a")
         f.write("   FIPS ISO2 ISO3   UN   NAME   AREA    POP2005  REGION  SUBREGION      LON     LAT                                           geometry")
 
         print(gdf.loc[gdf['ISO3'] == "BLN"])
