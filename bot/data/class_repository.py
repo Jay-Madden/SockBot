@@ -4,7 +4,7 @@ import aiosqlite
 import discord
 
 from bot.data.base_repository import BaseRepository
-from bot.models.class_models import ClassSemester, ClassChannel
+from bot.models.class_models import ClassSemester, ClassChannel, ClassTA
 
 
 class ClassRepository(BaseRepository):
@@ -143,11 +143,29 @@ class ClassRepository(BaseRepository):
         - class_role_id
         - post_message_id
         - class_archived
+        - class_ta_role_id
         """
         async with aiosqlite.connect(self.resolved_db_path) as db:
-            await db.execute('UPDATE ClassChannel SET semester_id = ?, category_id = ?,'
-                             'class_role_id = ?, post_message_id = ?, class_archived = ? '
+            await db.execute('UPDATE ClassChannel SET semester_id = ?, category_id = ?, class_role_id = ?, '
+                             'post_message_id = ?, class_archived = ?, class_ta_role_id = ? '
                              'WHERE channel_id = ?',
                              (cls.semester_id, cls.category_id, cls.class_role_id,
                               cls.post_message_id, cls.class_archived, cls.channel_id))
             await db.commit()
+
+    async def get_ta(self, user: Union[int, discord.User], channel: Union[int, discord.TextChannel]) -> ClassTA | None:
+        user_id = user if isinstance(user, int) else user.id
+        channel_id = channel if isinstance(channel, int) else channel.id
+        async with aiosqlite.connect(self.resolved_db_path) as db:
+            cursor = await db.execute('SELECT * FROM ClassTA WHERE ta_user_id = ? AND channel_id = ?',
+                                      (user_id, channel_id))
+            dictionary = await self.fetch_first_as_dict(cursor)
+            if not dictionary:
+                return None
+            return ClassTA(**dictionary)
+
+    async def get_tas(self, channel: Union[int, discord.TextChannel]) -> list[ClassTA]:
+        channel_id = channel if isinstance(channel, int) else channel.id
+        async with aiosqlite.connect(self.resolved_db_path) as db:
+            cursor = await db.execute('SELECT * FROM ClassTA WHERE channel_id = ?', (channel_id,))
+            return [ClassTA(**d) for d in await self.fetch_all_as_dict(cursor)]

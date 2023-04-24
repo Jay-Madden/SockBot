@@ -51,6 +51,7 @@ class ClassChannel(ClassChannelScaffold):
     semester_id: str
     category_id: int
     class_role_id: int
+    class_ta_role_id: int | None
     post_message_id: int | None
     class_archived: bool = False
 
@@ -63,3 +64,11 @@ class ClassPin:
     pin_owner: int
     pin_requester: int
     pin_pinned: bool = False
+
+
+@dataclass
+class ClassTA:
+    channel_id: int
+    ta_user_id: int
+    ta_display_tag: bool
+    ta_details: str | None

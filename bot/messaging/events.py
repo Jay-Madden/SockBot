@@ -534,6 +534,19 @@ class EventsMeta(type):
         """
         return 'on_class_insert'
 
+    @property
+    def on_class_edit(self):
+        """
+        Published when a user requests to edit a registered class channel.
+
+        Args:
+            inter (discord.Interaction): The app command interaction.
+            cls (bot.models.class_models.ClassChannelScaffold): The class channel scaffolding.
+            role (discord.Role | None = None): The optional role to set for the class.
+            desc (str | None = None): The optional channel description.
+        """
+        return 'on_class_edit'
+
 
 class Events(metaclass=EventsMeta):
     pass

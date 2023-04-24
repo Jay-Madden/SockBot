@@ -37,7 +37,7 @@ class ClassService(BaseService):
         channel = await self.bot.guild.create_text_channel(name=cls.channel_name, topic=f'{cls.class_name} - {desc}')
         class_channel = ClassChannel(cls.class_prefix, cls.class_number, cls.class_professor,
                                      cls.class_name, channel.id, semester.semester_id,
-                                     category.id, role.id, post_message_id=None)
+                                     category.id, role.id, None, None)
 
         # move, sort, sync permissions, and push the new class to the repo
         await self._move_and_sort(category, channel)
@@ -75,7 +75,7 @@ class ClassService(BaseService):
         class_role = role if role else await self._get_or_create_role(cls)
         class_channel = ClassChannel(cls.class_prefix, cls.class_number, cls.class_professor,
                                      cls.class_name, channel.id, semester.semester_id,
-                                     category.id, class_role.id, post_message_id=None)
+                                     category.id, class_role.id, None, None)
 
         # move, sort, sync permissions, and push the new class to the repo
         await channel.edit(name=cls.channel_name, topic=f'{cls.class_name} - {desc}')
@@ -97,6 +97,15 @@ class ClassService(BaseService):
         # send our embed to the notifications channel + to the user
         await self._get_notifs_channel().send(embed=embed)
         await inter.followup.send(embed=embed)
+
+    @BaseService.listener(Events.on_class_edit)
+    async def on_class_edit(self,
+                            inter: discord.Interaction,
+                            cls: ClassChannelScaffold,
+                            channel: discord.TextChannel,
+                            role: discord.Role | None = None,
+                            desc: str | None = None):
+        pass
 
     @BaseService.listener(Events.on_semester_archive)
     async def on_semester_archive(self, semester: ClassSemester, inter: discord.Interaction | None = None):

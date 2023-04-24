@@ -50,6 +50,23 @@ CREATE TABLE IF NOT EXISTS ClassPin
 );
 
 
+-- Represents a class teaching assistant
+
+CREATE TABLE IF NOT EXISTS ClassTA
+(
+    channel_id      INTEGER NOT NULL,
+    ta_user_id      INTEGER NOT NULL,
+    ta_display_tag  BOOLEAN NOT NULL,
+    ta_details      TEXT,
+    PRIMARY KEY (channel_id, ta_user_id),
+    FOREIGN KEY (channel_id)
+        REFERENCES ClassChannel (channel_id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE
+);
+
+ALTER TABLE ClassChannel ADD COLUMN class_ta_role_id INTEGER;
+
 -- Populate ClassSemester table, if the values do not exist.
 
 -- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
