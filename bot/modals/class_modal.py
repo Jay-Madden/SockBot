@@ -30,7 +30,7 @@ ADD = lambda data: '📔 Add Class'
 EDIT = lambda data: f'📔 Edit #{data[0].name}'
 INSERT = lambda data: f'📔 Insert #{data[0].name}'
 
-CLASS_DATA = Union[tuple[str, int], tuple[discord.TextChannel, discord.Role]]
+CLASS_DATA = Union[tuple[str, int], tuple[discord.TextChannel, discord.Role, bool]]
 
 
 class ClassModal(Modal):
@@ -174,14 +174,16 @@ class ClassModal(Modal):
         - The name of the channel is formatted as `MAJR-XXXX-[Professor]`
         - The topic of the channel is formatted as `[Course Title] - [Course Description]`
         """
-        if isinstance(data[0], str):
+        if len(data) == 2:
             prefix, num = data
             self.major.default = prefix
             self.course_number.default = num
             return
 
-        split_topic = data[0].topic.split('-') if data[0].topic else []
-        split_name = data[0].name.split('-')
+        channel, role, archive = data
+
+        split_topic = channel.topic.split('-') if channel.topic else []
+        split_name = channel.name.split('-')
 
         # fill in the data from our split channel name, if possible
         if len(split_name) >= 3:

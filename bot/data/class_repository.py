@@ -116,13 +116,12 @@ class ClassRepository(BaseRepository):
     async def insert_class(self, cls: ClassChannel) -> None:
         """
         Inserts the given ClassChannel model into the database.
-        class_archived from the model is not inserted and is instead defaulted to False.
         """
         async with aiosqlite.connect(self.resolved_db_path) as db:
-            await db.execute("INSERT INTO ClassChannel VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, FALSE)",
-                             (cls.channel_id, cls.semester_id, cls.category_id,
-                              cls.class_role_id, cls.class_prefix, cls.class_number,
-                              cls.post_message_id, cls.class_professor, cls.class_name))
+            await db.execute("INSERT INTO ClassChannel VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                             (cls.channel_id, cls.semester_id, cls.category_id, cls.class_role_id, cls.class_prefix,
+                              cls.class_number, cls.post_message_id, cls.class_professor, cls.class_name,
+                              cls.class_archived))
             await db.commit()
 
     async def delete_class(self, channel: Union[int, ClassChannel]) -> None:
@@ -151,6 +150,37 @@ class ClassRepository(BaseRepository):
                              'WHERE channel_id = ?',
                              (cls.semester_id, cls.category_id, cls.class_role_id,
                               cls.post_message_id, cls.class_archived, cls.channel_id))
+            await db.commit()
+
+    async def insert_ta(self, ta_model: ClassTA) -> None:
+        """
+        Inserts the given ClassTA model into the database.
+        """
+        async with aiosqlite.connect(self.resolved_db_path) as db:
+            await db.execute('INSERT INTO ClassTA VALUES (?, ?, ?, ?)',
+                             (ta_model.channel_id, ta_model.ta_user_id, ta_model.ta_display_tag, ta_model.ta_details))
+            await db.commit()
+
+    async def delete_ta(self, ta_model: ClassTA) -> None:
+        """
+        Deletes the ClassTA where the channel_id and ta_user_id are present.
+        """
+        async with aiosqlite.connect(self.resolved_db_path) as db:
+            await db.execute('DELETE FROM ClassTA WHERE channel_id = ? AND ta_user_id = ?',
+                             (ta_model.channel_id, ta_model.ta_user_id))
+            await db.commit()
+
+    async def update_ta(self, ta_model: ClassTA) -> None:
+        """
+        Updates the ClassTA where the channel_id and ta_user_id are present.
+        Specifically, the following are updated:
+        - ta_display_tag
+        - ta_details
+        """
+        async with aiosqlite.connect(self.resolved_db_path) as db:
+            await db.execute('UPDATE ClassTA SET ta_display_tag = ?, ta_details = ? '
+                             'WHERE channel_id = ? AND ta_user_id = ?',
+                             (ta_model.ta_display_tag, ta_model.ta_details, ta_model.channel_id, ta_model.ta_user_id))
             await db.commit()
 
     async def get_ta(self, user: Union[int, discord.User], channel: Union[int, discord.TextChannel]) -> ClassTA | None:

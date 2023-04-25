@@ -217,15 +217,11 @@ class ClassService(BaseService):
         # remove the post message ID from our cache and delete the role
         if not class_channel.class_archived:
             self.messages.remove(class_channel.post_message_id)
-        if role := self.bot.guild.get_role(class_channel.class_role_id):
-            await role.delete(reason='Class deletion')
 
         # push the deletion to our repository, prepare our embed, and mention if we deleted a role
         await self.repo.delete_class(class_channel)
         embed = discord.Embed(title='📔 Class Channel Deleted', color=Colors.Error)
         embed.description = f'Class channel #{class_channel.channel_name} deleted.'
-        if role:
-            embed.description += f'\nThe role `@{class_channel.class_code}` has been deleted for convenience.'
         embed.add_field(name='Class Title', value=class_channel.full_title)
         embed.add_field(name='Semester', value=class_channel.semester_id)
 

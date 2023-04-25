@@ -8,6 +8,7 @@ from bot.consts import Colors
 from bot.data.class_repository import ClassRepository
 from bot.messaging.events import Events
 from bot.modals.class_modal import ClassModal, valid_course_num, valid_course_maj, INSERT, EDIT
+from bot.modals.ta_modal import TAModal
 from bot.sock_bot import SockBot
 from bot.utils.helpers import as_timestamp, error_embed
 
@@ -49,7 +50,11 @@ class ManageClassesCog(commands.GroupCog, name='class'):
 
     @app_commands.command(name='insert', description='Insert a class channel.')
     @app_commands.checks.has_permissions(administrator=True)
-    async def insert(self, inter: discord.Interaction, channel: discord.TextChannel, role: discord.Role | None = None):
+    async def insert(self,
+                     inter: discord.Interaction,
+                     channel: discord.TextChannel,
+                     role: discord.Role | None = None,
+                     archive: bool = True):
         # check if a current semester exists
         if not await self.repo.get_current_semester():
             embed = discord.Embed(title='📔 No Current Semester', color=Colors.Error)
@@ -68,7 +73,7 @@ class ManageClassesCog(commands.GroupCog, name='class'):
             return
 
         await inter.response.send_modal(
-            ClassModal(self.bot, mode=INSERT, class_data=(channel, role))
+            ClassModal(self.bot, mode=INSERT, class_data=(channel, role, archive))
         )
 
     @app_commands.command(name='edit', description='Edit a class channel.')
@@ -79,7 +84,7 @@ class ManageClassesCog(commands.GroupCog, name='class'):
             await inter.response.send_message(embed=embed, ephemeral=True)
             return
         await inter.response.send_modal(
-            ClassModal(self.bot, mode=EDIT, class_data=(channel, role))
+            ClassModal(self.bot, mode=EDIT, class_data=(channel, role, False))
         )
 
     @app_commands.command(name='role', description='Add or remove a class role from yourself.')
@@ -256,16 +261,34 @@ class ManageClassesCog(commands.GroupCog, name='class'):
 
     @ta_group.command(name='list', description='List the TAs & their info for a class.')
     async def ta_list(self, inter: discord.Interaction, channel: discord.TextChannel | None = None):
-        pass
+        text_channel = channel if channel else inter.message.channel
+        if not (cls := await self.repo.search_class_by_channel(text_channel)):
+            embed = error_embed(inter.user, f'The channel {text_channel.mention} is not a class channel.')
+            await inter.response.send_message(embed=embed, ephemeral=True)
+            return
+        if not (class_tas := await self.repo.get_tas(text_channel)):
+            embed = discord.Embed(title='📔 Class TAs', color=Colors.Purple)
+            embed.description = f'There are no TAs for the class {channel.mention}.'
+            await inter.response.send_message(embed=embed, ephemeral=True)
+            return
+        embed = discord.Embed(title='📔 Class TAs', color=Colors.Purple)
+        embed.description = f'Here are the details for registered TAs in {cls.class_code}.'
+        for i, ta in enumerate(class_tas):
+            adder = f'{self.bot.guild.get_member(ta.ta_user_id).mention}\n' if ta.ta_display_tag else ''
+            embed.add_field(name=f'TA #{i + 1}', value=f'{adder}```{ta.ta_details}```')
+        await inter.response.send_message(embed=embed, ephemeral=True)
 
-    @ta_group.command(name='details', description='Edit the TA details displayed in your class.')
-    async def details(self, inter: discord.Interaction, channel: discord.TextChannel, display_tag: bool = True):
+    @ta_group.command(name='motd', description='Edit the TA message of the day in your class.')
+    async def ta_edit(self, inter: discord.Interaction, channel: discord.TextChannel, display_tag: bool = True):
+        if not (cls := await self.repo.search_class_by_channel(channel)):
+            embed = error_embed(inter.user, f'The channel {channel.mention} is not a class channel.')
+            await inter.response.send_message(embed=embed, ephemeral=True)
+            return
         if not (ta := await self.repo.get_ta(inter.user, channel)):
             embed = error_embed(inter.user, f'You are not a TA for {channel.mention}.')
             await inter.response.send_message(embed=embed, ephemeral=True)
             return
-
-        pass
+        await inter.response.send_modal(TAModal(cls, ta, display_tag))
 
 
 async def setup(bot: SockBot) -> None:
