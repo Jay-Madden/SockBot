@@ -1,11 +1,11 @@
 # Vineet Saraf
-# April 6th, 2023
+# April 21st, 2023
 
 import os
 import random
 import shutil
 import math
-import bot.cogs.geo_cog.flagdict as flagdict
+import bot.cogs.geo_cog.streetviewrandomizer.countries as flagdict
 import discord
 import requests
 import time
@@ -17,12 +17,12 @@ import bot.bot_secrets as bot_secrets
 
 from timeit import default_timer as timer
 from discord.ui import Button, View
-#from bot.cogs.geo_cog import database
 from bot.sock_bot import SockBot
 from bot.cogs.geo_cog.streetviewrandomizer.StreetViewRandom import StreetViewRandom
 from bot.data.geo_repository import geo_repository
 
 log = logging.getLogger(__name__)
+
 
 # Streetview grabbing mechanism explained:
 # -- Spray the map with points until street view is found.
@@ -54,6 +54,10 @@ log = logging.getLogger(__name__)
 # 2.) Add new ISO3 code to the countries file, we will pretend this is a new country.
 # 3.) Add to Countries list in StreetViewRandom.py
 
+quota:    int = 10
+filename: str = 'StreetView.jpg'
+pic_base: str = 'https://maps.googleapis.com/maps/api/streetview?'
+api_key:  str = bot_secrets.secrets.geocode_key
 
 class GeoGuessCOG(commands.Cog):
     def __init__(self, bot):
@@ -61,24 +65,12 @@ class GeoGuessCOG(commands.Cog):
         self._last_member = None
         self.repo = geo_repository()
 
-    TEST_SCORE: int = 6969
-
-    intents = discord.Intents.default()
-    intents.message_content = True
-    client = discord.Client(intents=intents)
-
-    responseTime = 0
-
     @staticmethod
     def pull_street_view(self, pic_params, pic_base, filename, quota) -> dict:
         if quota > 0:
             t0: int = time.time_ns()
             pic_response: requests.Response = requests.get(pic_base, params=pic_params)
             t1: int = time.time_ns()
-            self.responseTime = (t1 - t0)/1000000
-
-            for key, value in pic_response.headers.items():
-                print(f"{key}: {value}")
 
             if os.path.exists(filename):
                 filename = filename.format(int(time.time()))
@@ -131,42 +123,37 @@ class GeoGuessCOG(commands.Cog):
         newEmbed.set_image(url=f"attachment://{filename}")
         newEmbed.add_field(name="", value=f'Moves Left: {quota}', inline=True)
 
-        file = discord.File('bot/cogs/geo_cog/northward.png',
+        file = discord.File('bot/cogs/geo_cog/Assets/northward.png',
                             filename='northward.png')
 
         newEmbed.set_author(name="Geoguessr by yeetusfeetus#9414",
                             icon_url="https://cdn.discordapp.com/attachments/782728868179607603/1087563023243300884/authorimg.png")
 
-        newEmbed.set_footer(text=f"{round(apirestime)} ms. Use \"?geoguess lb\" for the leaderboard.",
+        newEmbed.set_footer(text=f"{round(apirestime)} ms. Use \"?geoguess lb\" for the GeoguessrLeaderboard.",
                             icon_url="https://cdn.discordapp.com/attachments/782728868179607603/1087564659537756201/Logo-google-map-design-on-transparent-background-PNG.png")
 
         # Disable buttons when too far zoomed in or zoomed out
-        if pic_params['fovs'] <= 30:
-            b3.disabled = True
-        else:
-            b3.disabled = False
-        if pic_params['fovs'] >= 150:
-            b4.disabled = True
-        else:
-            b4.disabled = False
+        b3.disabled = pic_params['fovs'] <= 30
+        b4.disabled = pic_params['fovs'] >= 150
+
         # Adjust thumbnail to account for compass direction
         if pic_params['headings'] == 0:
-            file: discord.File = discord.File('bot/cogs/geo_cog/northward.png', filename='northward.png')
+            file: discord.File = discord.File('bot/cogs/geo_cog/Assets/northward.png', filename='northward.png')
             newEmbed.set_thumbnail(url='attachment://northward.png')
         elif pic_params['headings'] == 90:
-            file: discord.File = discord.File('bot/cogs/geo_cog/eastward.png', filename='eastward.png')
+            file: discord.File = discord.File('bot/cogs/geo_cog/Assets/eastward.png', filename='eastward.png')
             newEmbed.set_thumbnail(url='attachment://eastward.png')
         elif pic_params['headings'] == 180:
-            file: discord.File = discord.File('bot/cogs/geo_cog/southward.png', filename='southward.png')
+            file: discord.File = discord.File('bot/cogs/geo_cog/Assets/southward.png', filename='southward.png')
             newEmbed.set_thumbnail(url='attachment://southward.png')
         else:
-            file: discord.File = discord.File('bot/cogs/geo_cog/westward.png', filename='westward.png')
+            file: discord.File = discord.File('bot/cogs/geo_cog/Assets/westward.png', filename='westward.png')
             newEmbed.set_thumbnail(url='attachment://westward.png')
         return {'newEmbed': newEmbed, 'file': file}
 
     @staticmethod
     def decay_score(start_score, start, end):
-        return int(start_score*math.exp((-1/28)*(end - start)))
+        return int(start_score * math.exp((-1 / 28) * (end - start)))
 
     # Main command for running the game.
     @ext.command()
@@ -174,13 +161,10 @@ class GeoGuessCOG(commands.Cog):
     @ext.example("?geoguess game")
     @ext.long_help("Starts a game round.")
     @ext.short_help("Play game.")
-    async def game(self, ctx, *, member: discord.Member = None) -> None:
-        await ctx.send('I\'m blindfolded throwing darts at the map, gimme a sec...', delete_after=5)
-
-        quota:    int = 10
-        filename: str = 'StreetView.jpg'
-        pic_base: str = 'https://maps.googleapis.com/maps/api/streetview?'
-        api_key:  str = bot_secrets.secrets.geocode_key
+    async def game(self, ctx) -> None:
+        global quota
+        global filename, pic_base, api_key
+        await ctx.send("I'm blindfolded throwing darts at the map, gimme a sec...", delete_after=5)
 
         # Pick a random country to look at
         c, r = random.choice(list(StreetViewRandom.Countries.items()))
@@ -216,7 +200,7 @@ class GeoGuessCOG(commands.Cog):
 
         # CREATE RANDOM BUTTON OPTIONS FOR SELECTING COUNTRIES #
         emoji_For_Country: str = self.getcountryemoji(self.get_iso2(execute['ISO3Digits']))
-        listifiedCountry: list[str] = list(set(StreetViewRandom.Countries.keys()))
+        listifiedCountry: list[str] = list(StreetViewRandom.Countries.keys())
 
         curr: str = self.get_iso2(execute['ISO3Digits'])
 
@@ -287,7 +271,7 @@ class GeoGuessCOG(commands.Cog):
 
         # Create functions to handle four image functionalities: zoom in, zoom out, turn left and turn right.
         async def pan_left(interaction) -> None:
-            nonlocal quota
+            global quota
             args['headings'] = ((args['headings'] - 90) % 360)
 
             passThis = {'heading': args['headings'],
@@ -314,7 +298,7 @@ class GeoGuessCOG(commands.Cog):
                                                     view=view)
 
         async def pan_right(interaction) -> None:
-            nonlocal quota
+            global quota
             args['headings'] = ((args['headings'] + 90) % 360)
 
             passThis = {'heading': args['headings'],
@@ -342,7 +326,7 @@ class GeoGuessCOG(commands.Cog):
                                                     view=view)
 
         async def zoom_in(interaction) -> None:
-            nonlocal quota
+            global quota
             args['fovs'] = ((args['fovs'] - 40) % 360)
 
             passThis = {'heading': args['headings'],
@@ -369,7 +353,7 @@ class GeoGuessCOG(commands.Cog):
                                                     view=view)
 
         async def zoom_out(interaction) -> None:
-            nonlocal quota
+            global quota
             args['fovs'] = ((args['fovs'] + 40) % 360)
 
             passThis = {'heading': args['headings'],
@@ -434,7 +418,7 @@ class GeoGuessCOG(commands.Cog):
 
             if await self.repo.get_best_preparation_for_member(user_id) is None:
                 print("NO USER FOUND")
-                await self.repo.add_into(interaction.user.name, user_id, 4, final_Score)
+                await self.repo.add_into(user_id, final_Score)
             else:
                 print("USER EXISTS ALREADY")
                 existingScore: int = (await self.repo.get_existing_score(user_id)).get('score') + final_Score
@@ -446,45 +430,46 @@ class GeoGuessCOG(commands.Cog):
             await msg.edit(view=None)
             await interaction.followup.send(content=f"<@!{user_id}> got the right answer of **{ cityname }{ self.getcountryname(execute['ISO3Digits']) }** and won **{final_Score} points.** ")
 
-        async def o2incorrect(interaction) -> None:
+        o1.callback = correct
+
+        async def o2callback(interaction: discord.Interaction) -> None:
             user_id = interaction.user.id
             if user_id in users_clicked:
                 return
             users_clicked.append(user_id)
             o2.style = discord.ButtonStyle.red
             await interaction.response.edit_message(view=view)
+        o2.callback = o2callback
 
-        async def o3incorrect(interaction) -> None:
+        async def o3callback(interaction: discord.Interaction) -> None:
             user_id = interaction.user.id
             if user_id in users_clicked:
                 return
             users_clicked.append(user_id)
             o3.style = discord.ButtonStyle.red
             await interaction.response.edit_message(view=view)
+        o3.callback = o3callback
 
-        async def o4incorrect(interaction) -> None:
+        async def o4callback(interaction: discord.Interaction) -> None:
             user_id = interaction.user.id
             if user_id in users_clicked:
                 return
             users_clicked.append(user_id)
             o4.style = discord.ButtonStyle.red
             await interaction.response.edit_message(view=view)
+        o4.callback = o4callback
 
-        async def o5incorrect(interaction) -> None:
+        async def o5callback(interaction: discord.Interaction) -> None:
             user_id = interaction.user.id
             if user_id in users_clicked:
                 return
             users_clicked.append(user_id)
             o5.style = discord.ButtonStyle.red
             await interaction.response.edit_message(view=view)
+        o5.callback = o5callback
 
-        o1.callback = correct
-        o2.callback = o2incorrect
-        o3.callback = o3incorrect
-        o4.callback = o4incorrect
-        o5.callback = o5incorrect
-
-        OptionsList = list()
+        #OptionsList = list[o1, o2, o3, o4, o5]
+        OptionsList = []
         OptionsList.append(o1)
         OptionsList.append(o2)
         OptionsList.append(o3)
@@ -493,8 +478,8 @@ class GeoGuessCOG(commands.Cog):
 
         # Randomize the order of country buttons, so that option 1 isn't always right ;)
         random.shuffle(OptionsList)
-        for i in OptionsList:
-            view.add_item(i)
+        for i in range(5):
+            view.add_item(OptionsList[i])
 
         await ctx.send(files=[file, N['file']], embed=N['newEmbed'], view=(view if quota > 0 else None))
         initial_score: int = 5000
@@ -507,8 +492,8 @@ class GeoGuessCOG(commands.Cog):
     @ext.command()
     @commands.cooldown(1, 30, commands.BucketType.user)
     @ext.example("?geoguess lb")
-    @ext.long_help("Displays the leaderboard")
-    @ext.short_help("leaderboard")
+    @ext.long_help("Displays the GeoguessrLeaderboard")
+    @ext.short_help("GeoguessrLeaderboard")
     async def lb(self, ctx, *, member: discord.Member = None) -> None:
         newEmbed: discord.Embed = discord.Embed(color=0x00FF61)
         newEmbed.set_author(name="Discord Geoguessr by yeetusfeetus#9414",
@@ -545,3 +530,4 @@ class GeoGuessCOG(commands.Cog):
 
 async def setup(bot: SockBot):
     await bot.add_cog(GeoGuessCOG(bot))
+

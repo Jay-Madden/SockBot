@@ -2,16 +2,17 @@ import requests
 from bot.cogs.geo_cog.streetviewrandomizer.coordinate import Coordinate
 import bot.bot_secrets as bot_secrets
 
+
+endpoint = "https://maps.googleapis.com/maps/api/streetview"
+
 class StreetViewStaticApi:
-    def __init__(self, api_key: str):
-        self.endpoint = "https://maps.googleapis.com/maps/api/streetview"
 
-        if api_key is None:
+    def has_image(self, coord: Coordinate, radius_m: int) -> tuple[bool, Coordinate]:
+        """
+        Check if the API key exists.
+        """
+        if bot_secrets.secrets.geocode_key is None:
             raise Exception("API key is required. Use --api-key or set the GOOGLE_MAPS_API_KEY environment variable.")
-
-        self.api_key = api_key
-
-    def has_image(self, coord: Coordinate, radius_m: int) -> tuple((bool, Coordinate)):
         """
         Check if the location has an image.
         :param `coord`: Coordinate.
@@ -19,10 +20,10 @@ class StreetViewStaticApi:
         :return: Tuple containing a boolean indicating if an image was found and the coordinate.
         """
         response = requests.get(
-            f"{self.endpoint}/metadata",
+            f"{endpoint}/metadata",
             params={
                 "location": f"{coord.lat},{coord.lon}",
-                "key": self.api_key,
+                "key": bot_secrets.secrets.geocode_key,
                 "radius": radius_m
             },
         ).json()
@@ -50,22 +51,23 @@ class StreetViewStaticApi:
         Get an image from Google Street View Static API.
         :param `coord`: Coordinate.
         :param `size`: Image size.
-        :param `heading`: Heading, defaults to 0.
+        :param `heading`: Heading, defaults to 180.
         :param `pitch`: Pitch, defaults to 0.
-        :param `fov`: Field of view, defaults to 90.
+        :param `fov`: Field of view, defaults to 110.
         :return: Image in bytes.
         """
 
         response = requests.get(
-            self.endpoint,
+            endpoint,
             params={
                 "location": f"{coord.lat},{coord.lon}",
                 "size": size,
                 "heading": heading,
                 "pitch": pitch,
                 "fov": fov,
-                "key": self.api_key
+                "key": bot_secrets.secrets.geocode_key
             },
         )
 
         return response.content
+

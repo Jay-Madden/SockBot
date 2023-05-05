@@ -64,9 +64,7 @@ class ClassPin:
     pin_pinned: bool = False
 
 @dataclass
-class leaderboard:
+class GeoguessrLeaderboard:
     id: int
-    name: str
     user_id: int
-    rank: int
     score: int

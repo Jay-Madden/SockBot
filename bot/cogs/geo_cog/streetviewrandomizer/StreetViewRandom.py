@@ -8,6 +8,13 @@ from bot.cogs.geo_cog.streetviewrandomizer.countries import countries_codes
 from bot.cogs.geo_cog.streetviewrandomizer.street_view_static_api import StreetViewStaticApi
 from bot.cogs.geo_cog.streetviewrandomizer.coordinate import Coordinate
 
+"""
+StreetViewRandom: runs the functionality for retrieving randomized streetview from a set of coordinates.
+To view a detailed list of surveyed countries, run the following command before the if-statement in find_available_image():
+
+    f'Searched in: {country_df["ISO3"].values[0]} | lon: {random_lon:20} lat: {random_lat:20} | time: {elapsed_ms:8.2f}ms')
+"""
+
 class StreetViewRandom:
     def __init__(self, args):
         self.args = args
@@ -29,18 +36,15 @@ class StreetViewRandom:
 
     @staticmethod
     def random_country(self, input):
-        print("Error location 2")
         c, r = random.choice(list(StreetViewRandom.Countries.items()))
-        print("Error location 3")
         while (c == input):
             c, r = random.choice(list(StreetViewRandom.Countries.items()))
-        print(f"new country {c}")
         return c, r
 
     def run(self, args):
         global API
 
-        API = StreetViewStaticApi(args['api_key'])
+        API = StreetViewStaticApi()
 
         gdf = gpd.read_file("bot/cogs/geo_cog/streetviewrandomizer/TM_WORLD_BORDERS-0.3/TM_WORLD_BORDERS-0.3.shp")
         f = open("bot/cogs/geo_cog/streetviewrandomizer/TM_WORLD_BORDERS-0.3/transcribedData.txt", "a")
@@ -54,15 +58,12 @@ class StreetViewRandom:
             print("Run with option -l to list all available countries")
             return
 
-        #gdf = gdf.query(f"ISO3 in {country}")
         gdf = gdf.loc[gdf['ISO3'] == f"{country}"]
         print(gdf.head())
         gdf = gdf.assign(IMAGES=0)
 
-        #total_images_per_country = len(args['headings']) * len(args['pitches']) * len(args['fovs'])
         total_attempts = 0
         total_elapsed_time_ms = 0
-        catchError = 0
 
         for i in range(args['samples']):
             print(f"\n{'-' * 40} Sampling {i + 1}/{args['samples']} {'-' * 40}\n")
@@ -159,10 +160,6 @@ class StreetViewRandom:
             elapsed_ms = (end - start) * 1000
             total_elapsed_time_ms += elapsed_ms
 
-            print(
-                f'Searched image in {country_df["ISO3"].values[0]} | lon: {random_lon:20} lat: {random_lat:20} | elapsed time: {elapsed_ms:8.2f}ms'
-            )
-
             if image_found:
                 break
         # wrap in () in case broken
@@ -192,5 +189,4 @@ class StreetViewRandom:
 
         end = timer()
         total_elapsed_time_ms = (end - start) * 1000
-        print("ok we got here atleast right?")
         return total_elapsed_time_ms

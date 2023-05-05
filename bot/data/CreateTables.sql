@@ -65,10 +65,8 @@ INSERT OR IGNORE INTO ClassSemester(semester_id, semester_name, semester_start, 
     ('fa2023', 'Fall 2023',     '2023-08-18 05:00:00',  '2023-12-20 05:00:00');
 
 -- Geoguessr Scoreboard
-CREATE TABLE IF NOT EXISTS leaderboard (
-    id          INTEGER      PRIMARY_KEY,
-    name        TEXT,
+CREATE TABLE IF NOT EXISTS GeoguessrLeaderboard (
+    id          INTEGER      PRIMARY KEY,
     user_id     INTEGER,
-    rank        INTEGER,
     score       INTEGER
 );
