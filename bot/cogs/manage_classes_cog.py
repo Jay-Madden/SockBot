@@ -4,11 +4,12 @@ import discord
 import discord.ext.commands as commands
 from discord import app_commands
 
-from bot.consts import Colors
+from bot.consts import Colors, Staff
 from bot.data.class_repository import ClassRepository
 from bot.messaging.events import Events
 from bot.modals.class_modal import ClassModal, valid_course_num, valid_course_maj, INSERT, EDIT
 from bot.modals.ta_modal import TAModal
+from bot.models.class_models import ClassTA
 from bot.sock_bot import SockBot
 from bot.utils.helpers import as_timestamp, error_embed
 
@@ -248,8 +249,37 @@ class ManageClassesCog(commands.GroupCog, name='class'):
                      member: discord.Member,
                      cls: discord.TextChannel,
                      apply_role: bool = True):
+        # check if the given discord channel is a class channel
+        if not (clazz := await self.repo.search_class_by_channel(cls)):
+            embed = error_embed(inter.user, f'The channel {cls.mention} is not a class channel.')
+            await inter.response.send_message(embed=embed, ephemeral=True)
+            return
 
-        pass
+        # check to make sure the given member is not already a TA
+        if await self.repo.get_ta(member.id, cls.id):
+            embed = error_embed(inter.user, f'{member.mention} is already a TA for {cls.mention}.')
+            await inter.response.send_message(embed=embed, ephemeral=True)
+            return
+
+        # create/apply the role if needed
+        role: discord.Role | None = None
+        if apply_role:
+            if not clazz.class_ta_role_id or not (role := self.bot.guild.get_role(clazz.class_ta_role_id)):
+                role = await self.bot.guild.create_role(name=clazz.ta_role_name, color=discord.Color.yellow())
+                clazz.class_ta_role_id = role.id
+                await self.repo.update_class(clazz)
+            await member.add_roles(role, reason=f'Approved by {str(inter.user)}')
+
+        # create our ClassTA model, insert it into the repo, and send the embed
+        class_ta = ClassTA(channel_id=cls.id, ta_user_id=member.id, ta_display_tag=apply_role, ta_details=None)
+        await self.repo.insert_ta(class_ta)
+        embed = discord.Embed(title='📔 Class TA Added', color=Colors.Purple)
+        if role and apply_role:
+            embed.description = f'The role {role.mention} was applied.'
+        embed.add_field(name='Class', value=clazz.full_title, inline=False)
+        embed.add_field(name='Channel', value=cls.mention)
+        embed.add_field(name='User', value=member.mention)
+        await inter.response.send_message(embed=embed)
 
     @ta_group.command(name='remove', description='Remove a TA from a class.')
     @app_commands.checks.has_permissions(administrator=True)
@@ -257,7 +287,32 @@ class ManageClassesCog(commands.GroupCog, name='class'):
                         inter: discord.Interaction,
                         member: discord.Member,
                         cls: discord.TextChannel | None = None):
-        pass
+        # check if the given discord channel is a class channel
+        if not await self.repo.search_class_by_channel(cls):
+            embed = error_embed(inter.user, f'The channel {cls.mention} is not a class channel.')
+            await inter.response.send_message(embed=embed, ephemeral=True)
+            return
+
+        # get all ClassTA models the user is in
+        class_tas: list[ClassTA]
+        if cls:
+            class_tas = [await self.repo.get_ta(member.id, cls.id)]
+        else:
+            class_tas = await self.repo.get_tas_by_user(member)
+        if not len(class_tas):
+            embed = error_embed(inter.user,
+                                f'The user {member.mention} is not a TA{f" for {cls.mention}" if cls else ""}.')
+            await inter.response.send_message(embed=embed, ephemeral=True)
+            return
+
+        # delete the models from the db and send the embed
+        for ta in class_tas:
+            await self.repo.delete_ta(ta)
+        ta_roles = [role for role in member.roles if await self.repo.is_ta_role(role)]
+        await member.remove_roles(*ta_roles, reason=f'Removed by {str(inter.user)}')
+        embed = discord.Embed(title='📔 Class TA Removed', color=Colors.Purple)
+        embed.description = f'{member.mention} was removed as a TA in {len(class_tas)} class(es).'
+        await inter.response.send_message(embed=embed)
 
     @ta_group.command(name='list', description='List the TAs & their info for a class.')
     async def ta_list(self, inter: discord.Interaction, channel: discord.TextChannel | None = None):
@@ -266,20 +321,26 @@ class ManageClassesCog(commands.GroupCog, name='class'):
             embed = error_embed(inter.user, f'The channel {text_channel.mention} is not a class channel.')
             await inter.response.send_message(embed=embed, ephemeral=True)
             return
-        if not (class_tas := await self.repo.get_tas(text_channel)):
+        class_tas = await self.repo.get_tas_by_channel(channel)
+        if not any(t.has_details is True for t in class_tas):
             embed = discord.Embed(title='📔 Class TAs', color=Colors.Purple)
-            embed.description = f'There are no TAs for the class {channel.mention}.'
+            embed.description = f'There are no registered TAs for {cls.full_title}.'
             await inter.response.send_message(embed=embed, ephemeral=True)
             return
         embed = discord.Embed(title='📔 Class TAs', color=Colors.Purple)
         embed.description = f'Here are the details for registered TAs in {cls.class_code}.'
         for i, ta in enumerate(class_tas):
-            adder = f'{self.bot.guild.get_member(ta.ta_user_id).mention}\n' if ta.ta_display_tag else ''
+            if not ta.has_details:
+                continue
+            if ta.ta_display_tag or Staff.is_staff(inter.user):
+                adder = f'{self.bot.guild.get_member(ta.ta_user_id).mention}\n'
+            else:
+                adder = ''
             embed.add_field(name=f'TA #{i + 1}', value=f'{adder}```{ta.ta_details}```')
         await inter.response.send_message(embed=embed, ephemeral=True)
 
-    @ta_group.command(name='motd', description='Edit the TA message of the day in your class.')
-    async def ta_edit(self, inter: discord.Interaction, channel: discord.TextChannel, display_tag: bool = True):
+    @ta_group.command(name='details', description='Edit the TA details of your class.')
+    async def ta_details(self, inter: discord.Interaction, channel: discord.TextChannel, display_tag: bool = False):
         if not (cls := await self.repo.search_class_by_channel(channel)):
             embed = error_embed(inter.user, f'The channel {channel.mention} is not a class channel.')
             await inter.response.send_message(embed=embed, ephemeral=True)
@@ -288,7 +349,7 @@ class ManageClassesCog(commands.GroupCog, name='class'):
             embed = error_embed(inter.user, f'You are not a TA for {channel.mention}.')
             await inter.response.send_message(embed=embed, ephemeral=True)
             return
-        await inter.response.send_modal(TAModal(cls, ta, display_tag))
+        await inter.response.send_modal(TAModal(self.bot, cls, ta, display_tag))
 
 
 async def setup(bot: SockBot) -> None:

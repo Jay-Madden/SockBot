@@ -42,7 +42,7 @@ class PinService(BaseService):
         assert react is not None
 
         # check if one of our conditions is met to pin the message
-        if react.count >= MIN_PIN_REACTIONS or Staff.is_staff(event.member):
+        if react.count >= MIN_PIN_REACTIONS or await self._is_privileged(event.channel_id, event.user_id):
             if not (to_pin := await fetch_optional_message(channel, class_pin.user_message_id)):
                 await message.delete()
                 await self.pin_repo.delete_pin(class_pin)
@@ -53,7 +53,9 @@ class PinService(BaseService):
             if len(pinned_messages) == MAX_PINS_PER_CHANNEL:
                 await pinned_messages[-1].unpin(reason='Unpinned to make room.')
             # pin the message, update the pin in the db, and delete sockbot's pin request embed
-            await to_pin.pin(reason=f'Pinned by vote, started by user with ID {class_pin.pin_requester}')
+            user = self.bot.get_user(class_pin.pin_requester)
+            reason = f'Pinned by vote, started by {str(user) if user else f"user with ID {class_pin.pin_requester}"}'
+            await to_pin.pin(reason=reason)
             await self.pin_repo.set_pinned(class_pin)
             await message.delete()
 
@@ -69,6 +71,20 @@ class PinService(BaseService):
     async def on_channel_delete(self, channel: discord.TextChannel):
         for pin in await self.pin_repo.get_pins_from_channel(channel):
             await self.pin_repo.delete_pin(pin)
+
+    async def _is_privileged(self, channel: int, user: int) -> bool:
+        """
+        Checks whether the given user is privileged.
+        A user is privileged if they meet either of the following:
+        - Has "administrator" permissions.
+        - Is a staff member in the Staff enum.
+        - Is a registered TA for the given channel.
+
+        Returns True if the given user is privileged, False otherwise.
+        """
+        if Staff.is_staff(user):
+            return True
+        return await self.class_repo.get_ta(user, channel) is not None
 
     async def load_service(self):
         for class_pin in await self.pin_repo.get_open_pin_requests():

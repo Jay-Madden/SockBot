@@ -106,7 +106,7 @@ class ClassModal(Modal):
 
         if self._mode == EDIT:
             await self._bot.messenger.publish(
-                Events.on_class_edit, inter, scaffold, role=self._data[1], desc=description
+                Events.on_class_edit, inter, scaffold, channel=self._data[0], role=self._data[1], desc=description
             )
             return
 
@@ -116,7 +116,13 @@ class ClassModal(Modal):
 
         if self._mode == INSERT:
             await self._bot.messenger.publish(
-                Events.on_class_insert, inter, scaffold, self._data[0], role=self._data[1], desc=description
+                Events.on_class_insert,
+                inter,
+                scaffold,
+                channel=self._data[0],
+                role=self._data[1],
+                desc=description,
+                archive=self._data[2]
             )
         else:
             await self._bot.messenger.publish(Events.on_class_create, inter, scaffold, description)
@@ -180,7 +186,7 @@ class ClassModal(Modal):
             self.course_number.default = num
             return
 
-        channel, role, archive = data
+        channel, _, _ = data
 
         split_topic = channel.topic.split('-') if channel.topic else []
         split_name = channel.name.split('-')
