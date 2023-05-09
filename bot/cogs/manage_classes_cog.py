@@ -265,7 +265,8 @@ class ManageClassesCog(commands.GroupCog, name='class'):
         role: discord.Role | None = None
         if apply_role:
             if not clazz.class_ta_role_id or not (role := self.bot.guild.get_role(clazz.class_ta_role_id)):
-                role = await self.bot.guild.create_role(name=clazz.ta_role_name, color=discord.Color.yellow())
+                if not (role := self._find_role(clazz.ta_role_name)):
+                    role = await self.bot.guild.create_role(name=clazz.ta_role_name, color=discord.Color.yellow())
                 clazz.class_ta_role_id = role.id
                 await self.repo.update_class(clazz)
             await member.add_roles(role, reason=f'Approved by {str(inter.user)}')
@@ -351,6 +352,13 @@ class ManageClassesCog(commands.GroupCog, name='class'):
             await inter.response.send_message(embed=embed, ephemeral=True)
             return
         await inter.response.send_modal(TAModal(self.bot, cls, ta, display_tag))
+
+    def _find_role(self, name: str) -> discord.Role | None:
+        name = name.lower()
+        for role in self.bot.guild.roles:
+            if role.name.lower() is name:
+                return role
+        return None
 
 
 async def setup(bot: SockBot) -> None:

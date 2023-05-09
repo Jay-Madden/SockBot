@@ -89,12 +89,6 @@ class ClassRepository(BaseRepository):
                 return None
             return ClassChannel(**dictionary)
 
-    async def search_class_narrow(self, prefix: str, num: int) -> list[ClassChannel]:
-        """
-        Searches for any registered class with the given class abbreviation and class number.
-        """
-        pass
-
     async def search_class_by_channel(self, channel: Union[discord.TextChannel, int]) -> ClassChannel | None:
         """
         Searches for a registered class with the given channel ID or channel itself.

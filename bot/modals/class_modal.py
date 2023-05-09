@@ -176,7 +176,7 @@ class ClassModal(Modal):
         - major
         - course_number
 
-        If `tuple[discord.TextChannel, discord.Role]` is given as our data, we can fill some or all items, given:
+        If `tuple[discord.TextChannel, discord.Role, bool]` is given as our data, we can fill some or all items, given:
         - The name of the channel is formatted as `MAJR-XXXX-[Professor]`
         - The topic of the channel is formatted as `[Course Title] - [Course Description]`
         """
