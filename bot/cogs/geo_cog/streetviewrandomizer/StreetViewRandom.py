@@ -1,90 +1,86 @@
-import os
 import random
 from io import BytesIO
 from timeit import default_timer as timer
 import geopandas as gpd
+import logging
+import bot.bot_secrets as bot_secrets
 from PIL import Image
-from bot.cogs.geo_cog.streetviewrandomizer.countries import countries_codes
+from dataclasses import dataclass
 from bot.cogs.geo_cog.streetviewrandomizer.street_view_static_api import StreetViewStaticApi
 from bot.cogs.geo_cog.streetviewrandomizer.coordinate import Coordinate
+from bot.cogs.geo_cog.streetviewrandomizer.countries import Countries
 
 """
 StreetViewRandom: runs the functionality for retrieving randomized streetview from a set of coordinates.
-To view a detailed list of surveyed countries, run the following command before the if-statement in find_available_image():
+To view a detailed list of surveyed countries, 
+run the following command before the if-statement in find_available_image():
 
-    f'Searched in: {country_df["ISO3"].values[0]} | lon: {random_lon:20} lat: {random_lat:20} | time: {elapsed_ms:8.2f}ms')
+    f'{country_df["ISO3"].values[0]} | lon: {random_lon:20} lat: {random_lat:20} | time: {elapsed_ms:8.2f}ms')
 """
+API = StreetViewStaticApi()
+MAX_ATTEMPTS = 50
+img_path = f"bot/cogs/geo_cog/tempAssets/StreetView.jpg"
+Error: int = 101
+shape_file = "bot/cogs/geo_cog/streetviewrandomizer/TM_WORLD_BORDERS-0.3/TM_WORLD_BORDERS-0.3.shp"
+
+
+# Easy way to group related data together
+@dataclass()
+class ImageData:
+    coord: Coordinate
+    country_df: gpd.GeoDataFrame
+    attempts: int
+    total_elapsed_time_ms: int
+    error_code: int
+
 
 class StreetViewRandom:
     def __init__(self, args):
         self.args = args
 
-    Error: str = 101
-    Countries = {"USA": 1250, "FRA": 250, "ESP": 200,
-                 "TWN": 70,   "SVK": 50,  "POL": 100,
-                 "IRL": 75,   "LVA": 150, "SGP": 25,
-                 "ITA": 100,  "CZE": 100, "RUS": 2500,
-                 "BGD": 150,  "SMR": 15,  "JPN": 250,
-                 "BRA": 2000, "BGR": 100, "BLL": 10,
-                 "CWN": 10,   "SPO": 10, "BOO": 10,
-                 "ATL": 15,   "TOT": 10, "DET": 15,
-                 "PJT": 20,   "PXA": 4,  "TKY": 10,
-                 "TLL": 10,   "AAA": 20, "MMM": 20,
-                 "HST": 20,   "PWJ": 10, "STD": 15,
-                 "MSW": 30,   "CBA": 15
-                 }
-
+    # Selects a random country from the list of acceptable countries
     @staticmethod
-    def random_country(self, input):
-        c, r = random.choice(list(StreetViewRandom.Countries.items()))
-        while (c == input):
-            c, r = random.choice(list(StreetViewRandom.Countries.items()))
+    def random_country(inputCountry: str):
+        c, r = random.choice(list(Countries.items()))
+        while c == inputCountry:
+            c, r = random.choice(list(Countries.items()))
         return c, r
 
-    def run(self, args):
+    def run(self, args) -> tuple:
         global API
-
-        API = StreetViewStaticApi()
-
+        # Download QGIS to interact with this file
         gdf = gpd.read_file("bot/cogs/geo_cog/streetviewrandomizer/TM_WORLD_BORDERS-0.3/TM_WORLD_BORDERS-0.3.shp")
-        f = open("bot/cogs/geo_cog/streetviewrandomizer/TM_WORLD_BORDERS-0.3/transcribedData.txt", "a")
-        f.write("   FIPS ISO2 ISO3   UN   NAME   AREA    POP2005  REGION  SUBREGION      LON     LAT                                           geometry")
-
-        print(gdf.loc[gdf['ISO3'] == "BLN"])
-
         country = args['countries']
-        if country.upper() not in countries_codes["iso3"]:
-            print(f'Bad country ISO3 code: "{country}"')
-            print("Run with option -l to list all available countries")
-            return
 
         gdf = gdf.loc[gdf['ISO3'] == f"{country}"]
-        print(gdf.head())
         gdf = gdf.assign(IMAGES=0)
 
         total_attempts = 0
         total_elapsed_time_ms = 0
 
+        # Loop for the amount of samples
         for i in range(args['samples']):
-            print(f"\n{'-' * 40} Sampling {i + 1}/{args['samples']} {'-' * 40}\n")
-            FAI = self.find_available_image(gdf, args['radius'], self.Error)
-            catchError = FAI[4]
+            FAI = self.find_available_image(gdf, args['radius'])
+            catchError = FAI.error_code
             loops = 0
-            while catchError == self.Error:
+            while catchError == Error:
                 if loops >= 1:
+                    logging.warning("Too many attempts (100+), defaulting to Singapore.")
                     country = "SGP"
                     ro = 25
                 else:
-                    country, ro = self.random_country(self, country)
-                gdf = gpd.read_file("bot/cogs/geo_cog/streetviewrandomizer/TM_WORLD_BORDERS-0.3/TM_WORLD_BORDERS-0.3.shp")
+                    country, ro = self.random_country(country)
+                gdf = gpd.read_file(shape_file)
                 gdf = gdf.loc[gdf['ISO3'] == f"{country}"]
                 gdf = gdf.assign(IMAGES=0)
-                FAI = self.find_available_image(gdf, ro, self.Error)
-                catchError = FAI[4]
+                FAI = self.find_available_image(gdf, ro)
+                catchError = FAI.error_code
                 loops += 1
 
-            coord, country_df, attempts, elapsed_time_ms, catchError = FAI
-
+            coord = FAI.coord
+            country_df = FAI.country_df
+            attempts = FAI.attempts
+            elapsed_time_ms = FAI.total_elapsed_time_ms
             total_attempts += attempts
             total_elapsed_time_ms += elapsed_time_ms
 
@@ -93,40 +89,36 @@ class StreetViewRandom:
             gdf.loc[gdf["ISO3"] == country_iso3, "IMAGES"] += 1
 
             print(
-             f"\n> Image found in {country_iso3} ({country_name}) | lon: {coord.lon}, lat: {coord.lat} | attempts: {attempts} | total elapsed time: {elapsed_time_ms / 1000:.2f}s"
+             f"\n> Image found in {country_iso3} ({country_name}) | "
+             f"lon: {coord.lon}, lat: {coord.lat} | attempts: {attempts} "
+             f"| total elapsed time: {elapsed_time_ms / 1000:.2f}s"
             )
             print("\nImage found now save\n")
             total_elapsed_time_ms = total_elapsed_time_ms + int(self.save_images(
-                country_iso3, coord, args['output_dir'], args['size'], args['headings'], args['pitches'], args['fovs']
-            ) )
-            print("\nImage successfully saved\n")
+                coord, args['size'], args['headings'], args['pitches'], args['fovs']
+            ))
+            logging.info(f"\nImage saved!\n Total attempts: {total_attempts} Average number of attempts per "
+                  f"sampling: {total_attempts / args['samples']:.2f} "
+                  f"\nTotal elapsed time: {total_elapsed_time_ms / 1000:.2f}s Average elapsed time per sampling: "
+                  f"{(total_elapsed_time_ms / 1000) / args['samples']:.2f}s")
 
-            print(f"\nTotal attempts: {total_attempts}")
-            print(f"Average number of attempts per sampling: {total_attempts / args['samples']:.2f}")
-
-            print(f"\nTotal elapsed time: {total_elapsed_time_ms / 1000:.2f}s")
-            print(f"Average elapsed time per sampling: {(total_elapsed_time_ms / 1000) / args['samples']:.2f}s")
         SIZE = args['size']
-        returnVals = {'URL': ('https://maps.googleapis.com/maps/api/streetview?'
-                               + f'size={SIZE}&'
-                               + f'location={coord.lat},{coord.lon}&'
-                               + f"heading={args['headings']}&"
-                               + f"pitch={args['pitches']}&"
-                               + f"fov={args['fovs']}&"
-                               + f"key={args['api_key']}"
-                               ),
-                        'lat': coord.lat,
-                        'lon': coord.lon,
-                        'ISO3Digits': country_iso3}
-        return returnVals
 
-    def compute_area(self, gdf: gpd.GeoDataFrame):
+        return (('https://maps.googleapis.com/maps/api/streetview?'
+                + f'size={SIZE}&'
+                + f'location={coord.lat},{coord.lon}&'
+                + f"heading={args['headings']}&"
+                + f"pitch={args['pitches']}&"
+                + f"fov={args['fovs']}&"
+                + f"key={bot_secrets.secrets.geocode_key}"),
+                coord.lat,
+                coord.lon,
+                country_iso3)
+
+    @staticmethod
+    def compute_area(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         gdf = gdf.eval("AREA = geometry.to_crs('esri:54009').area")
         gdf = gdf.sort_values(by="AREA", ascending=False)
-
-        # Antarctica is huge, but its Google Street View coverage is very small.
-        # Thus, we reduce its area so as to avoid picking it too often.
-        gdf.loc[gdf["ISO3"] == "ATA", "AREA"] = gdf["AREA"].min()
 
         gdf = gdf.eval("AREA_PERCENTAGE = AREA / AREA.sum()")
         gdf = gdf.sort_values(by="AREA_PERCENTAGE", ascending=False)
@@ -134,7 +126,9 @@ class StreetViewRandom:
 
         return gdf
 
-    def find_available_image(self, gdf: gpd.GeoDataFrame, radius_m, error_code):
+    # Find a random point in the specified country up to 50 times or until street view is found.
+    def find_available_image(self, gdf: gpd.GeoDataFrame, radius_m: int) -> ImageData:
+        global Error
         coord = None
         country_df = None
         attempts = 0
@@ -150,8 +144,10 @@ class StreetViewRandom:
             random_lon = random.uniform(min_lon, max_lon)
             coord = Coordinate(random_lat, random_lon)
 
-            if attempts >= 50:
-                return (self.Error, self.Error, self.Error, self.Error, error_code)
+            if attempts >= MAX_ATTEMPTS:
+                logging.warning("Maximum safe attempts (50) exceeded. Choosing a different country.")
+                returnValue: ImageData = ImageData(Error, Error, Error, Error, Error)
+                return returnValue
 
             if coord.within(country_df.geometry.values[0]):
                 image_found, coord = API.has_image(coord, radius_m)
@@ -162,31 +158,26 @@ class StreetViewRandom:
 
             if image_found:
                 break
-        # wrap in () in case broken
-        return coord, country_df, attempts, total_elapsed_time_ms, 0
 
-    def get_random_country(self, gdf: gpd.GeoDataFrame):
+        returnValue: ImageData = ImageData(coord, country_df, attempts, total_elapsed_time_ms, 0)
+        return returnValue
+
+    # Uses the sample function to get a random row from the data table
+    @staticmethod
+    def get_random_country(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         return gdf.sample(n=1, weights="AREA_PERCENTAGE" if "AREA_PERCENTAGE" in gdf.columns else None)
 
-    def save_images(self, iso3_code: str, coord: Coordinate, output_dir, size, headings, pitches, fovs):
-        if output_dir.endswith("/"):
-            output_dir = output_dir[:-1]
-
-        output_dir += f"/{iso3_code.lower()}"
-
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-        count = 0
+    # Save the found image in the specified path
+    @staticmethod
+    def save_images(coord: Coordinate, size: str, headings: int, pitches: int, fovs: int) -> int:
         start = timer()
 
-        count += 1
-        img = API.get_image(coord, size, heading=headings, pitch=pitches, fov=fovs)
+        img: bytes = API.get_image(coord, size, heading=headings, pitch=pitches, fov=fovs)
 
-        img = Image.open(BytesIO(img))
+        img: bytes = Image.open(BytesIO(img))
 
-        img_path = f"bot/cogs/geo_cog/tempAssets/StreetView.jpg"
         img.save(img_path)
 
         end = timer()
         total_elapsed_time_ms = (end - start) * 1000
-        return total_elapsed_time_ms
+        return int(total_elapsed_time_ms)

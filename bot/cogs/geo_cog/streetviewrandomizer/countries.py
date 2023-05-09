@@ -1,6 +1,21 @@
 # Countries with Google Street View coverage
 # Flag Dictionary of ISO2 UN Country codes
 
+# Available Coverage
+Countries = {"USA": 1250, "FRA": 250, "ESP": 200,
+             "TWN": 70,   "SVK": 50,  "POL": 100,
+             "IRL": 75,   "LVA": 150, "SGP": 25,
+             "ITA": 100,  "CZE": 100, "RUS": 2500,
+             "BGD": 150,  "SMR": 15,  "JPN": 250,
+             "BRA": 2000, "BGR": 100, "BLL": 10,
+             "CWN": 10,   "SPO": 10, "BOO": 10,
+             "ATL": 15,   "TOT": 10, "DET": 15,
+             "PJT": 20,   "PXA": 4,  "TKY": 10,
+             "TLL": 10,   "AAA": 20, "MMM": 20,
+             "HST": 20,   "PWJ": 10, "STD": 15,
+             "MSW": 30,   "CBA": 15
+             }
+
 countries_codes = {
     "iso3": (
         # Custom Locations
