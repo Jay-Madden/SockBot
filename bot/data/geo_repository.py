@@ -38,12 +38,6 @@ class GeoGuessrRepository(BaseRepository):
             await connection.execute('INSERT INTO GeoguessrLeaderboard (user_id, score) values (?, ?);', (user_id, score))
             await connection.commit()
 
-    # delete a user
-    async def reset(self, user_id):
-        async with aiosqlite.connect(self.resolved_db_path) as connection:
-            await connection.execute('DELETE FROM GeoguessrLeaderboard WHERE user_id = ?', (user_id,))
-            await connection.commit()
-
     async def get_best_preparation_for_member(self, user_id):
         async with aiosqlite.connect(self.resolved_db_path) as connection:
             cursor = await connection.execute('SELECT * FROM GeoguessrLeaderboard WHERE user_id = ? ORDER BY score DESC LIMIT 1;', (user_id,))
