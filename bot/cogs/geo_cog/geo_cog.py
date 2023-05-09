@@ -14,9 +14,8 @@ import logging
 import discord.ext.commands as commands
 import bot.extensions as ext
 import bot.bot_secrets as bot_secrets
-import bot as bot
-from bot.cogs.geo_cog.geo_view import geo_view as geo_view
 
+from bot.cogs.geo_cog.geo_view import geo_view as geo_view
 from timeit import default_timer as timer
 from discord.ui import Button, View
 from bot.sock_bot import SockBot
