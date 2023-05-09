@@ -13,8 +13,7 @@ Countries = {"USA": 1250, "FRA": 250, "ESP": 200,
              "PJT": 20,   "PXA": 4,  "TKY": 10,
              "TLL": 10,   "AAA": 20, "MMM": 20,
              "HST": 20,   "PWJ": 10, "STD": 15,
-             "MSW": 30,   "CBA": 15
-             }
+             "MSW": 30,   "CBA": 15}
 
 countries_codes = {
     "iso3": (

@@ -198,13 +198,12 @@ class GeoGuessCOG(commands.Cog):
         emoji_For_Country: str = self.getcountryemoji(self.get_parameter(execute[3], True, False, False))
 
         # Wrong Answers
+        # Get iso3 of good countries
         listifiedCountry: list[str] = list(Countries.keys())
-        randchoices = random.sample(listifiedCountry, 4)
+        randchoices: list = random.sample(listifiedCountry, 4)
 
-        # Duplication prevention protocol
-        for i in range(4):
-            while self.getcountryemoji(self.get_parameter(randchoices[i], True, False, False)) == emoji_For_Country:
-                randchoices = random.sample(listifiedCountry, 4)
+        while len(randchoices) - 1 == len(set(randchoices)):
+            randchoices = random.sample(listifiedCountry, 4)
 
         # Set the random choices
         randChoice1 = randchoices[0]
