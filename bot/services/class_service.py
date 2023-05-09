@@ -98,8 +98,8 @@ class ClassService(BaseService):
         embed.add_field(name='Class Title', value=cls.full_title, inline=False)
         embed.add_field(name='Semester', value=semester.semester_name)
         embed.add_field(name='Instructor', value=cls.class_professor)
-        embed.add_field(name='Inserted By', value=inter.user.mention)
         embed.add_field(name='Archived', value=str(archive))
+        embed.add_field(name='Inserted By', value=inter.user.mention)
 
         # send our embed to the notifications channel + to the user
         await self._get_notifs_channel().send(embed=embed)
@@ -112,16 +112,37 @@ class ClassService(BaseService):
                             channel: discord.TextChannel,
                             role: discord.Role | None = None,
                             desc: str | None = None):
-        if not (clazz := await self.repo.search_class_by_channel(channel)):
+        if not (cc := await self.repo.search_class_by_channel(channel)):
             return
-        clazz.class_prefix = cls.class_prefix
-        clazz.class_number = cls.class_number
-        clazz.class_professor = cls.class_professor
-        clazz.class_name = cls.class_name
-        if role:
-            clazz.class_role_id = role.id
+        await inter.response.defer(thinking=True)
 
-        pass
+        cc.class_prefix = cls.class_prefix
+        cc.class_number = cls.class_number
+        cc.class_professor = cls.class_professor
+        cc.class_name = cls.class_name
+        if role:
+            cc.class_role_id = role.id
+
+        if not role:
+            role = self.bot.guild.get_role(cc.class_role_id)
+
+        category = self._available_archive_category() if cc.class_archived else await self._get_or_create_category(cls)
+        await channel.edit(name=cls.channel_name, topic=f'{cls.class_name} - {desc}')
+        await self._move_and_sort(category, channel)
+        await self._sync_perms(cc)
+        await self.repo.update_class(cc)
+
+        embed = discord.Embed(title='📔 Class Edited', color=Colors.Purple)
+        embed.add_field(name='Class Title', value=cc.full_title, inline=False)
+        embed.add_field(name='Instructor', value=cc.class_professor)
+        embed.add_field(name='Role', value=role.mention if role else 'None')
+        if desc:
+            embed.add_field(name='Description', value=desc)
+        embed.add_field(name='Edited by', value=inter.user.mention)
+
+        # send our embed to the notifications channel + to the user
+        await self._get_notifs_channel().send(embed=embed)
+        await inter.followup.send(embed=embed)
 
     @BaseService.listener(Events.on_semester_archive)
     async def on_semester_archive(self, semester: ClassSemester, inter: discord.Interaction | None = None):

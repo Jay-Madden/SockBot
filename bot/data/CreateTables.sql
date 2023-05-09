@@ -65,8 +65,6 @@ CREATE TABLE IF NOT EXISTS ClassTA
         ON DELETE CASCADE
 );
 
-ALTER TABLE ClassChannel ADD COLUMN class_ta_role_id INTEGER;
-
 -- Populate ClassSemester table, if the values do not exist.
 
 -- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

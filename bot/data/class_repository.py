@@ -126,10 +126,10 @@ class ClassRepository(BaseRepository):
         Inserts the given ClassChannel model into the database.
         """
         async with aiosqlite.connect(self.resolved_db_path) as db:
-            await db.execute("INSERT INTO ClassChannel VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            await db.execute("INSERT INTO ClassChannel VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                              (cls.channel_id, cls.semester_id, cls.category_id, cls.class_role_id, cls.class_prefix,
                               cls.class_number, cls.post_message_id, cls.class_professor, cls.class_name,
-                              cls.class_archived))
+                              cls.class_archived, None))
             await db.commit()
 
     async def delete_class(self, channel: Union[int, ClassChannel]) -> None:
@@ -187,7 +187,9 @@ class ClassRepository(BaseRepository):
                              (ta_model.ta_display_tag, ta_model.ta_details, ta_model.channel_id, ta_model.ta_user_id))
             await db.commit()
 
-    async def get_ta(self, user: Union[int, discord.User], channel: Union[int, discord.TextChannel]) -> ClassTA | None:
+    async def get_ta(self,
+                     user: Union[int, discord.User, discord.Member],
+                     channel: Union[int, discord.TextChannel]) -> ClassTA | None:
         """
         Searches for a ClassTA with the given user and channel.
         """
