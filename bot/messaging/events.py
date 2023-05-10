@@ -531,8 +531,23 @@ class EventsMeta(type):
             channel (discord.TextChannel): The text channel to pair the class channel with.
             role (discord.Role | None = None): The optional role to insert with the class.
             desc (str | None = None): The optional channel description.
+            archive (bool): Whether to archive the class upon insertion.
         """
         return 'on_class_insert'
+
+    @property
+    def on_class_edit(self):
+        """
+        Published when a user requests to edit a registered class channel.
+
+        Args:
+            inter (discord.Interaction): The app command interaction.
+            cls (bot.models.class_models.ClassChannelScaffold): The class channel scaffolding.
+            channel (discord.TextChannel): The text channel to edit.
+            role (discord.Role | None = None): The optional role to set for the class.
+            desc (str | None = None): The optional channel description.
+        """
+        return 'on_class_edit'
 
 
 class Events(metaclass=EventsMeta):

@@ -1,4 +1,4 @@
-from typing import Union, Callable, Awaitable
+from typing import Union, Callable
 
 import discord
 from discord import Interaction, TextStyle
@@ -26,8 +26,14 @@ MAX_DESCR_LEN = 500
 MIN_CLASS_NUM = 1000
 MAX_CLASS_NUM = 8999
 
+ADD = lambda data: '📔 Add Class'
+EDIT = lambda data: f'📔 Edit #{data[0].name}'
+INSERT = lambda data: f'📔 Insert #{data[0].name}'
 
-class AddClassModal(Modal):
+CLASS_DATA = Union[tuple[str, int], tuple[discord.TextChannel, discord.Role, bool]]
+
+
+class ClassModal(Modal):
 
     major = TextInput(
         label='Course Major',
@@ -68,19 +74,16 @@ class AddClassModal(Modal):
     )
 
     def __init__(self, bot: SockBot,
-                 on_error: Callable[[discord.Interaction, Exception], Awaitable[None]],
                  *,
-                 class_data: tuple[str, int] | None = None,
-                 channel: discord.TextChannel | None = None,
-                 role: discord.Role | None = None):
-        super().__init__(title='📔 Add Class' if not channel else f'Insert #{channel.name}')
+                 mode: Callable[[CLASS_DATA], str] = ADD,
+                 class_data: CLASS_DATA | None = None):
+        super().__init__(title=mode(class_data))
         self._bot = bot
-        self._role = role
-        self._channel = channel
-        self._on_error = on_error
+        self._mode = mode
+        self._data = class_data
         self._repo = ClassRepository()
-        if class_data or channel:
-            self._autofill(channel if channel else class_data)
+        if class_data:
+            self._autofill(class_data)
 
     async def on_submit(self, inter: Interaction) -> None:
         # correct for error - reject if invalid
@@ -94,23 +97,38 @@ class AddClassModal(Modal):
         major = self.major.value.upper()
         description = self.course_description.value.capitalize()
         number = int(self.course_number.value)
-        # check if a similar class exists
-        if await self._search_similar(inter, major, number, professor):
-            return
+
         # create a new class channel scaffold to send to the service
         scaffold = ClassChannelScaffold(class_prefix=major,
                                         class_name=title,
                                         class_number=number,
                                         class_professor=professor)
-        if self._channel:
+
+        if self._mode == EDIT:
             await self._bot.messenger.publish(
-                Events.on_class_insert, inter, scaffold, self._channel, role=self._role, desc=description
+                Events.on_class_edit, inter, scaffold, channel=self._data[0], role=self._data[1], desc=description
+            )
+            return
+
+        # check if a similar class exists
+        if await self._search_similar(inter, major, number, professor):
+            return
+
+        if self._mode == INSERT:
+            await self._bot.messenger.publish(
+                Events.on_class_insert,
+                inter,
+                scaffold,
+                channel=self._data[0],
+                role=self._data[1],
+                desc=description,
+                archive=self._data[2]
             )
         else:
             await self._bot.messenger.publish(Events.on_class_create, inter, scaffold, description)
 
     async def on_error(self, interaction: Interaction, error: Exception) -> None:
-        await self._on_error(interaction, error)
+        await self._bot.on_modal_error(interaction, error)
 
     async def _search_similar(self, inter: discord.Interaction, pref: str, num: int, prof: str) -> bool:
         """
@@ -151,25 +169,27 @@ class AddClassModal(Modal):
         # channel are purged from the database upon startup of SockBot (as well as in a listener)
         return False
 
-    def _autofill(self, data: Union[tuple[str, int], discord.TextChannel]) -> None:
+    def _autofill(self, data: CLASS_DATA) -> None:
         """
         Automatically fills in the defaults of our items with our given data.
         If `tuple[str, int]` is given as our data, we can fill:
         - major
         - course_number
 
-        If `discord.TextChannel` is given as our data, we can fill some or all items, given:
+        If `tuple[discord.TextChannel, discord.Role, bool]` is given as our data, we can fill some or all items, given:
         - The name of the channel is formatted as `MAJR-XXXX-[Professor]`
         - The topic of the channel is formatted as `[Course Title] - [Course Description]`
         """
-        if isinstance(data, tuple):
+        if len(data) == 2:
             prefix, num = data
             self.major.default = prefix
             self.course_number.default = num
             return
 
-        split_topic = data.topic.split('-') if data.topic else []
-        split_name = data.name.split('-')
+        channel, _, _ = data
+
+        split_topic = channel.topic.split('-') if channel.topic else []
+        split_name = channel.name.split('-')
 
         # fill in the data from our split channel name, if possible
         if len(split_name) >= 3:
