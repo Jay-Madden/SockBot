@@ -43,13 +43,18 @@ class ClassChannelScaffold:
         level = (self.class_number // 1000) * 1000
         return f'{self.class_prefix} {level} LEVELS'
 
+    @property
+    def ta_role_name(self) -> str:
+        return f'{self.class_code} TA'
+
 
 @dataclass
 class ClassChannel(ClassChannelScaffold):
     channel_id: int
     semester_id: str
     category_id: int
-    class_role_id: int
+    class_role_id: int | None
+    class_ta_role_id: int | None
     post_message_id: int | None
     class_archived: bool = False
 
@@ -62,6 +67,19 @@ class ClassPin:
     pin_owner: int
     pin_requester: int
     pin_pinned: bool = False
+
+
+@dataclass
+class ClassTA:
+    channel_id: int
+    ta_user_id: int
+    ta_display_tag: bool
+    ta_details: str | None
+
+    @property
+    def has_details(self) -> bool:
+        return self.ta_details and len(self.ta_details.strip()) > 0
+
 
 @dataclass
 class GeoguessrLeaderboard:

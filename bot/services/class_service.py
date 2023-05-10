@@ -37,7 +37,7 @@ class ClassService(BaseService):
         channel = await self.bot.guild.create_text_channel(name=cls.channel_name, topic=f'{cls.class_name} - {desc}')
         class_channel = ClassChannel(cls.class_prefix, cls.class_number, cls.class_professor,
                                      cls.class_name, channel.id, semester.semester_id,
-                                     category.id, role.id, post_message_id=None)
+                                     category.id, role.id, None, None)
 
         # move, sort, sync permissions, and push the new class to the repo
         await self._move_and_sort(category, channel)
@@ -65,23 +65,29 @@ class ClassService(BaseService):
                               cls: ClassChannelScaffold,
                               channel: discord.TextChannel,
                               role: discord.Role | None = None,
-                              desc: str | None = None):
+                              desc: str | None = None,
+                              archive: bool = False):
         if not (semester := await self._check_semester(inter)):
             return
         await inter.response.defer(thinking=True)
 
         # create and assign what we couldn't in the class channel scaffold
-        category = await self._get_or_create_category(cls)
-        class_role = role if role else await self._get_or_create_role(cls)
-        class_channel = ClassChannel(cls.class_prefix, cls.class_number, cls.class_professor,
-                                     cls.class_name, channel.id, semester.semester_id,
-                                     category.id, class_role.id, post_message_id=None)
+        category = self._available_archive_category() if archive else await self._get_or_create_category(cls)
+        class_role: discord.Role | None = None
+        if not archive:
+            class_role = role if role else await self._get_or_create_role(cls)
+        class_channel = ClassChannel(class_prefix=cls.class_prefix, class_number=cls.class_number,
+                                     class_professor=cls.class_professor, class_name=cls.class_name,
+                                     channel_id=channel.id, semester_id=semester.semester_id, category_id=category.id,
+                                     class_role_id=class_role.id if class_role else None, class_ta_role_id=None,
+                                     post_message_id=None, class_archived=archive)
 
         # move, sort, sync permissions, and push the new class to the repo
         await channel.edit(name=cls.channel_name, topic=f'{cls.class_name} - {desc}')
         await self._move_and_sort(category, channel)
         await self._sync_perms(class_channel)
-        await self._send_welcome(class_channel, False, inter.user)
+        if not archive:
+            await self._send_welcome(class_channel, False, inter.user)
         await self.repo.insert_class(class_channel)
 
         # prepare our embed and include whether we set a role for the class channel
@@ -92,7 +98,47 @@ class ClassService(BaseService):
         embed.add_field(name='Class Title', value=cls.full_title, inline=False)
         embed.add_field(name='Semester', value=semester.semester_name)
         embed.add_field(name='Instructor', value=cls.class_professor)
+        embed.add_field(name='Archived', value=str(archive))
         embed.add_field(name='Inserted By', value=inter.user.mention)
+
+        # send our embed to the notifications channel + to the user
+        await self._get_notifs_channel().send(embed=embed)
+        await inter.followup.send(embed=embed)
+
+    @BaseService.listener(Events.on_class_edit)
+    async def on_class_edit(self,
+                            inter: discord.Interaction,
+                            cls: ClassChannelScaffold,
+                            channel: discord.TextChannel,
+                            role: discord.Role | None = None,
+                            desc: str | None = None):
+        if not (cc := await self.repo.search_class_by_channel(channel)):
+            return
+        await inter.response.defer(thinking=True)
+
+        cc.class_prefix = cls.class_prefix
+        cc.class_number = cls.class_number
+        cc.class_professor = cls.class_professor
+        cc.class_name = cls.class_name
+        if role:
+            cc.class_role_id = role.id
+
+        if not role:
+            role = self.bot.guild.get_role(cc.class_role_id)
+
+        category = self._available_archive_category() if cc.class_archived else await self._get_or_create_category(cls)
+        await channel.edit(name=cls.channel_name, topic=f'{cls.class_name} - {desc}')
+        await self._move_and_sort(category, channel)
+        await self._sync_perms(cc)
+        await self.repo.update_class(cc)
+
+        embed = discord.Embed(title='📔 Class Edited', color=Colors.Purple)
+        embed.add_field(name='Class Title', value=cc.full_title, inline=False)
+        embed.add_field(name='Instructor', value=cc.class_professor)
+        embed.add_field(name='Role', value=role.mention if role else 'None')
+        if desc:
+            embed.add_field(name='Description', value=desc)
+        embed.add_field(name='Edited by', value=inter.user.mention)
 
         # send our embed to the notifications channel + to the user
         await self._get_notifs_channel().send(embed=embed)
@@ -107,6 +153,12 @@ class ClassService(BaseService):
         notif_channel = self._get_notifs_channel()
         channel_mentions = []
         for channel in channels:
+            for class_ta in await self.repo.get_tas_by_channel(channel.channel_id):
+                await self.repo.delete_ta(class_ta)
+            if class_role := self.bot.guild.get_role(channel.class_role_id):
+                await class_role.delete(reason='Semester archival')
+            if ta_role := self.bot.guild.get_role(channel.class_ta_role_id):
+                await ta_role.delete(reason='Semester archival')
             channel_mentions.append(await self.on_class_archive(channel))
 
         # prepare our embed
@@ -130,9 +182,7 @@ class ClassService(BaseService):
             await self._send_failure(cls, 'Class Archive Failed', 'No archival category to move to.')
             return None
 
-        # delete role and make sure channel exists
-        if role := self.bot.guild.get_role(cls.class_role_id):
-            await role.delete(reason='Class archive')
+        # make sure channel exists
         if not (channel := self.bot.guild.get_channel(cls.channel_id)):
             await self._send_failure(cls, 'Class Archive Failed', f'Channel with ID `{cls.channel_id}` not found.')
             return None
@@ -208,15 +258,11 @@ class ClassService(BaseService):
         # remove the post message ID from our cache and delete the role
         if not class_channel.class_archived:
             self.messages.remove(class_channel.post_message_id)
-        if role := self.bot.guild.get_role(class_channel.class_role_id):
-            await role.delete(reason='Class deletion')
 
         # push the deletion to our repository, prepare our embed, and mention if we deleted a role
         await self.repo.delete_class(class_channel)
         embed = discord.Embed(title='📔 Class Channel Deleted', color=Colors.Error)
         embed.description = f'Class channel #{class_channel.channel_name} deleted.'
-        if role:
-            embed.description += f'\nThe role `@{class_channel.class_code}` has been deleted for convenience.'
         embed.add_field(name='Class Title', value=class_channel.full_title)
         embed.add_field(name='Semester', value=class_channel.semester_id)
 
@@ -232,6 +278,10 @@ class ClassService(BaseService):
         # if the channel is being deleted, self.messages should not contain the post_message_id for the class channel
         if class_channel.post_message_id in self.messages:
             class_channel.class_role_id = None
+            self.messages.remove(class_channel.post_message_id)
+            await self.repo.update_class(class_channel)
+        elif class_channel.class_ta_role_id == role.id:
+            class_channel.class_ta_role_id = None
             await self.repo.update_class(class_channel)
 
     @BaseService.listener(Events.on_reaction_add)
@@ -268,10 +318,7 @@ class ClassService(BaseService):
         Moves the given discord.TextChannel to the given discord.CategoryChannel.
         Sorts the channel based on descending order and syncs the permissions of the channel based off the category.
         """
-        i = 0
-        for ch in category.channels:
-            if channel.name > ch.name:
-                i += 1
+        i = len([ch for ch in category.channels if isinstance(ch, discord.TextChannel) and ch.name < channel.name])
         await channel.move(beginning=True, offset=i, category=category, sync_permissions=True)
 
     def _available_archive_category(self) -> CategoryChannel | None:
