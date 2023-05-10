@@ -193,7 +193,8 @@ class ClassService(BaseService):
         cls.class_archived = True
         cls.category_id = category.id
         await self.repo.update_class(cls)
-        self.messages.remove(cls.post_message_id)
+        if cls.post_message_id in self.messages:
+            self.messages.remove(cls.post_message_id)
 
         # prepare our embed
         embed = discord.Embed(title='📔 Class Archived', color=Colors.Purple)
