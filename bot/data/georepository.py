@@ -1,13 +1,14 @@
-import aiosqlite
 from bot.data.base_repository import BaseRepository
-from bot.models.class_models import GeoguessrLeaderboard as GeoguessrLeaderboard
+from bot.models.class_models import GeoguessrLeaderboard
+import aiosqlite
 
 
-class GeoGuessrRepository(BaseRepository):
+class GeoRepository(BaseRepository):
 
     async def get_rank(self) -> list[dict]:
         async with aiosqlite.connect(self.resolved_db_path) as connection:
-            cursor = await connection.execute('SELECT *, ROW_NUMBER() OVER(ORDER BY score DESC) AS RANK from GeoguessrLeaderboard')
+            cursor = await connection.execute('SELECT *, ROW_NUMBER() OVER(ORDER BY score DESC) AS RANK from '
+                                              'GeoguessrLeaderboard')
             return await self.fetch_all_as_dict(cursor)
 
     async def return_size(self) -> int:
@@ -25,9 +26,10 @@ class GeoGuessrRepository(BaseRepository):
             cursor = await connection.execute('SELECT * FROM GeoguessrLeaderboard ORDER BY score DESC LIMIT 10;')
             return await self.fetch_all_as_dict(cursor)
 
-    async def get_existing_score(self, user_id) -> int:
+    async def get_existing_score(self, user_id) -> int | None:
         async with aiosqlite.connect(self.resolved_db_path) as connection:
-            cursor = await connection.execute('SELECT score FROM GeoguessrLeaderboard WHERE user_id = ? LIMIT 1;', (user_id,) )
+            cursor = await connection.execute('SELECT score FROM GeoguessrLeaderboard WHERE user_id = ? LIMIT 1;',
+                                              (user_id,))
             dictionary = await self.fetch_first_as_dict(cursor)
             if not dictionary:
                 return None
@@ -35,14 +37,15 @@ class GeoGuessrRepository(BaseRepository):
 
     async def add_into(self, user_id, score):
         async with aiosqlite.connect(self.resolved_db_path) as connection:
-            await connection.execute('INSERT INTO GeoguessrLeaderboard (user_id, score) values (?, ?);', (user_id, score))
+            await connection.execute('INSERT INTO GeoguessrLeaderboard (user_id, score) values (?, ?);',
+                                     (user_id, score))
             await connection.commit()
 
-    async def get_best_preparation_for_member(self, user_id):
+    async def get_by_userid_scores_descending(self, user_id: int):
         async with aiosqlite.connect(self.resolved_db_path) as connection:
-            cursor = await connection.execute('SELECT * FROM GeoguessrLeaderboard WHERE user_id = ? ORDER BY score DESC LIMIT 1;', (user_id,))
+            cursor = await connection.execute('SELECT * FROM GeoguessrLeaderboard WHERE user_id = ? '
+                                              'ORDER BY score DESC LIMIT 1;', (user_id,))
             dictionary = await self.fetch_first_as_dict(cursor)
             if not dictionary:
                 return None
             return GeoguessrLeaderboard(**dictionary)
-
