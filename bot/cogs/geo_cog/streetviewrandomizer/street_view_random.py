@@ -158,7 +158,7 @@ class StreetViewRandom:
         :param radius_m: Grab the nearest streetview within a radius.
         :return: ImageData dataclass.
         """
-        coord = None
+        coord: Coordinate = None
         country_df = None
         attempts = 0
         total_elapsed_time_ms = 0
@@ -177,9 +177,8 @@ class StreetViewRandom:
             radius_m = 1000 if isclose(86.92497299755392, random_lon, abs_tol=10**-4) else radius_m
 
             print(f"\n{attempts}")
-
             coord = Coordinate(random_lat, random_lon)
-            temp_coord: dict[str] = []
+            status: str = ""
 
             if attempts >= MAX_ATTEMPTS:
                 logging.warning("\nMaximum safe attempts (50) exceeded. Choosing a different country.")
@@ -187,16 +186,13 @@ class StreetViewRandom:
                 return returnValue
 
             if coord.within(country_df.geometry.values[0]):
-                temp_coord = await API.has_image(coord, radius_m)
-                lat = temp_coord["location"]["lat"]
-                lon = temp_coord["location"]["lng"]
-                coord = Coordinate(lat, lon)
+                coord, status = await API.has_image(coord, radius_m)
 
             end = timer()
             elapsed_ms = (end - start) * 1000
             total_elapsed_time_ms += elapsed_ms
 
-            if temp_coord["status"] == "OK":
+            if status == "OK":
                 break
 
         returnValue: ImageData = ImageData(coord, country_df, attempts, total_elapsed_time_ms, 0)

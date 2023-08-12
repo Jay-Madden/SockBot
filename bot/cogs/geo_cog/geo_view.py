@@ -186,6 +186,7 @@ class CountryBTN(discord.ui.Button):
     def __init__(self, parent_self, label: str, emoji, status: str):
         super().__init__(label=label, style=discord.ButtonStyle.blurple,
                          emoji=emoji, row=2, custom_id=status)
+        self.repo = GeoRepository()
         self.status = status
         self.parent_self = parent_self
         self.start = timer()

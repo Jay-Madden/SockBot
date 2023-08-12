@@ -98,7 +98,7 @@ class GeoGuessCog(commands.Cog):
         # Correct answer is the first member of the list, prior to shuffling
         # Pick a random country to look at
         random_sample: list = self.generate_country_options()
-        #random_sample[0] = "MHG"
+        random_sample[0] = "MDY"
 
         # Establish default values
         args = {
@@ -112,7 +112,7 @@ class GeoGuessCog(commands.Cog):
             'radius': COUNTRIES[random_sample[0]],
             'size': '640x550',
             'output_dir': 'bot/cogs/geo_cog/temp_assets/',
-            'location': ' '
+            'location': ''
         }
 
         # Grab random street-view from the country, compute api response time
@@ -120,14 +120,14 @@ class GeoGuessCog(commands.Cog):
 
         randomViewGrab = StreetViewRandom(args)
         execute = await randomViewGrab.run(args)
-        new_selections: list[str] = execute[4]
+        new_selections: list = execute[4]
 
         end = timer()
         api_res_time: float = (end - start) * 1000
 
         # In case StreetViewRandom switches countries
         if len(new_selections) > 0:
-            random_sample = execute
+            random_sample = execute[4]
         else:
             random_sample[0] = execute[3]
 

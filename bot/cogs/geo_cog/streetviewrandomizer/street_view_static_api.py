@@ -13,6 +13,9 @@ nest_asyncio.apply()
 
 
 class StreetViewStaticApi:
+    async def close_session(self):
+        if not self.session.closed:
+            await self.session.close()
 
     @staticmethod
     async def geolocate(quota: int, pic_base: str, filename: str, location_params: str) -> tuple[str, float]:
@@ -35,10 +38,8 @@ class StreetViewStaticApi:
                 return filename, api_rest_time
 
     @staticmethod
-    async def has_image(coord: Coordinate, radius_m: int) -> dict[str]:
-        """
-        Check if the API key exists.
-        """
+    async def has_image(coord: Coordinate, radius_m: int) -> tuple[Coordinate, bool]:
+        # Check if the API key exists.
         if bot_secrets.secrets.geocode_key is None:
             raise Exception("API key is required. Use --api-key or set the GOOGLE_MAPS_API_KEY environment variable.")
         """
@@ -63,7 +64,12 @@ class StreetViewStaticApi:
             if response["status"] == "UNKNOWN_ERROR":
                 logging.warning("An unknown error occurred on the server.")
 
-            return response
+            if 'location' in response:
+                lat = response["location"]["lat"]
+                lon = response["location"]["lng"]
+                coord = Coordinate(lat, lon)
+
+            return coord, response["status"]
 
     @staticmethod
     async def get_image(coord: Coordinate, size: str, heading=180, pitch=0, fov=110) -> bytes:
