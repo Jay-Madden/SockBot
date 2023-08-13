@@ -3,7 +3,7 @@
 
 # Available Coverage, manually calibrated values
 COUNTRIES = {
-    "USA": 1250, "FRA": 250,   "ESP": 200,     # USA                France,           Spain,
+    "USA": 1250, "FRA": 250,   "ESP": 200,     # USA,               France,           Spain,
     "TWN": 70,   "SVK": 50,    "POL": 100,     # Taiwan,            Slovakia,         Poland,
     "IRL": 75,   "LVA": 150,   "SGP": 25,      # Ireland,           Latvia,           Singapore,
     "ITA": 100,  "CZE": 100,   "RUS": 2500,    # Italy,             Czechia,          Russia,
@@ -22,19 +22,19 @@ COUNTRIES = {
     "LON": 10,   "PRE": 5,     "YUL": 10,      # London (UK),       Perth (AUS),      Montreal (QC),
     "YQB": 5,    "NOA": 5,     "GAZ": 5,       # Quebec City (CA),  Nicosia (CY),     Gaziantep (US),
     "DAK": 5,    "CLL": 25,    "DVR": 25,      # Dakar (SN),        Colombo (SK),     Denver (US),
-    "DBA": 5,    "MTE": 10,    "PAP": 1000,    # Dubai (UAE),       Mount Everest,    Papeete (PF)
+    "DBA": 5,    "MTE": 10,    "PAP": 1000,    # Dubai (UAE),       Mount Everest,    Papeete (PF),
     "NIU": 1000, "NAD": 500,   "SUU": 200,     # Niue,              Nadi (Fiji),      Suva (Fiji),
     "AAT": 200,  "MUA": 10000, "ATU": 2000,    # Chilean Antarctic, MUA Quebec (CA),  Attu Station (US),
     "MKJ": 1500, "BSK": 2000,  "LIE": 2000,    # Mt. Kilomanjaro,   Bishkek (KY),     Liechtenstein,
-    "BRB": 2750, "EDM": 5,     "FRO": 4500,    # Barbados
-    "CUH": 2000, "LAK": 9000,  "PYP": 6000,    # Churchill (CA)
-    "GGD": 3500, "PMM": 1000,  "YUK": 100,     # Gorkha (NP)
-    "IST": 10,   "SAH": 5000,  "PII": 100,     # Istanbul (TY)
-    "MHH": 2000, "MHG": 300,   "REU": 2500,    # Ebeye (MIUS)
-    "IOY": 900,  "PAL": 6000,  "MDY": 1000,    # BOIT (UK),
-    "NYC": 5,    "AGQ": 4500,  "TGQ": 250000,  # New York (US),     Algonquin (CA)
-    "RST": 5000, "AIK": 7000,  "SAK": 10000,
-    "KAK": 5000, "CHE": 50
+    "BRB": 2750, "EDM": 5,     "FRO": 4500,    # Barbados,          Edmonton (CA),    Faroe Islands,
+    "CUH": 2000, "LAK": 9000,  "PYP": 6000,    # Churchill (CA),    Ladakh (IN/PK),   Pyongyang (NK),
+    "GGD": 3500, "PMM": 1000,  "YUK": 100,     # Gorkha (NP),       St. Pierre (FR),  Yakutsk (RU),
+    "IST": 10,   "SAH": 5000,  "PII": 100,     # Istanbul (TY),     North Algeria,    Adamstown (PI),
+    "MHH": 2000, "MHG": 300,   "REU": 2500,    # Ebeye (MIUS),      Ebadon (MIUS),    Reunion (FR),
+    "IOY": 900,  "PAL": 6000,  "MDY": 1000,    # BOIT (UK),         Palau,            Midway Atoll (US),
+    "NYC": 5,    "AGQ": 4500,  "TGQ": 250000,  # New York (US),     Algonquin (CA),   Torngat Natl Park (CA),
+    "RST": 5000, "AIK": 7000,  "SAK": 10000,   # Resolute (CA),     Alavik (CA),      Sanikiluaq (CA),
+    "KAK": 5000, "CHE": 50,    "AQA": 5000     # Kamchatka (RU),    Switzerland       Base Yelcho (AQ)
 }
 
 FLAG_DICTIONARY = {
