@@ -34,7 +34,8 @@ COUNTRIES = {
     "IOY": 900,  "PAL": 6000,  "MDY": 1000,    # BOIT (UK),         Palau,            Midway Atoll (US),
     "NYC": 5,    "AGQ": 4500,  "TGQ": 250000,  # New York (US),     Algonquin (CA),   Torngat Natl Park (CA),
     "RST": 5000, "AIK": 7000,  "SAK": 10000,   # Resolute (CA),     Alavik (CA),      Sanikiluaq (CA),
-    "KAK": 5000, "CHE": 50,    "AQA": 5000     # Kamchatka (RU),    Switzerland       Base Yelcho (AQ)
+    "KAK": 5000, "CHE": 50,    "AQA": 10000,   # Kamchatka (RU),    Switzerland       Base Yelcho (AQ)
+    "MLT": 50                                  # Malta
 }
 
 FLAG_DICTIONARY = {

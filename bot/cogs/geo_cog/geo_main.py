@@ -98,7 +98,7 @@ class GeoGuessCog(commands.Cog):
         # Correct answer is the first member of the list, prior to shuffling
         # Pick a random country to look at
         random_sample: list = self.generate_country_options()
-        random_sample[0] = "MDY"
+        random_sample[0] = "RUS"
 
         # Establish default values
         args = {
