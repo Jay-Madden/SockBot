@@ -1,6 +1,6 @@
+import aiosqlite
 from bot.data.base_repository import BaseRepository
 from bot.models.class_models import GeoguessrLeaderboard
-import aiosqlite
 
 
 class GeoRepository(BaseRepository):

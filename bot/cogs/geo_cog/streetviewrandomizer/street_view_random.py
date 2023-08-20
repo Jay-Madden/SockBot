@@ -1,15 +1,16 @@
-from math import isclose
-from io import BytesIO
-from timeit import default_timer as timer
-from PIL import Image
-from dataclasses import dataclass
-from bot.cogs.geo_cog.streetviewrandomizer.street_view_static_api import StreetViewStaticApi
-from bot.cogs.geo_cog.streetviewrandomizer.coordinate import Coordinate
-from bot.cogs.geo_cog.streetviewrandomizer.countries import COUNTRIES
-import random
+import bot.bot_secrets as bot_secrets
 import geopandas as gpd
 import logging
-import bot.bot_secrets as bot_secrets
+import random
+from bot.cogs.geo_cog.streetviewrandomizer.coordinate import Coordinate
+from bot.cogs.geo_cog.streetviewrandomizer.countries import COUNTRIES
+from bot.cogs.geo_cog.streetviewrandomizer.street_view_static_api import StreetViewStaticApi
+from dataclasses import dataclass
+from io import BytesIO
+from math import isclose
+from PIL import Image
+from timeit import default_timer as timer
+
 
 """
 StreetViewRandom: runs the functionality for retrieving randomized streetview from a set of coordinates.

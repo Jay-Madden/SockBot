@@ -1,11 +1,11 @@
-from bot.cogs.geo_cog.streetviewrandomizer.coordinate import Coordinate
+import aiohttp as aiohttp
 import asyncio
 import bot.bot_secrets as bot_secrets
-import nest_asyncio
 import json
 import logging
+import nest_asyncio
+from bot.cogs.geo_cog.streetviewrandomizer.coordinate import Coordinate
 from timeit import default_timer as timer
-import aiohttp as aiohttp
 
 ENDPOINT = "https://maps.googleapis.com/maps/api/streetview"
 SESSION = aiohttp.ClientSession()

@@ -1,13 +1,13 @@
-from bot.cogs.geo_cog.streetviewrandomizer.street_view_static_api import StreetViewStaticApi
-from bot.data.georepository import GeoRepository
-from timeit import default_timer as timer
-from PIL import Image
 import asyncio
 import discord
 import discord.ui
 import math
 import nest_asyncio
 import random
+from bot.cogs.geo_cog.streetviewrandomizer.street_view_static_api import StreetViewStaticApi
+from bot.data.georepository import GeoRepository
+from timeit import default_timer as timer
+from PIL import Image
 
 nest_asyncio.apply()
 
