@@ -11,16 +11,15 @@ import random
 
 nest_asyncio.apply()
 
-FILE_NAME: str = 'StreetView.jpg'
-PIC_BASE: str = 'https://maps.googleapis.com/maps/api/streetview?'
+FILE_NAME = 'StreetView.jpg'
+PIC_BASE = 'https://maps.googleapis.com/maps/api/streetview?'
+QUOTA = 10
 
 
 class GeoView(discord.ui.View):
     def __init__(self, args: dict, labels: dict, city_name: str):
         super().__init__()
         self.repo = GeoRepository()
-        self.quota = 10
-        self.final_score = 0
         self.location_params = {
             'heading':  args['headings'],
             'pitch':    args['pitches'],
@@ -32,13 +31,12 @@ class GeoView(discord.ui.View):
         }
         self.users_clicked: list = []
         # Add country options upon initialization
-        options: list = [CountryBTN(self, labels['labels'][x], labels['emojis'][x], "correct")
-                         if x == 0 else
-                         CountryBTN(self, labels['labels'][x], labels['emojis'][x], f"incorrect{x}")
-                         for x in range(5)]
-        random.shuffle(options)
-        for i in range(5):
-            self.add_item(options[i])
+        self.options: list = [CountryBTN(self, labels['labels'][x], labels['emojis'][x], "correct") if x == 0 else
+                              CountryBTN(self, labels['labels'][x], labels['emojis'][x], f"incorrect{x}")
+                              for x in range(5)]
+        random.shuffle(self.options) 
+        for i in range(5): 
+            self.add_item(self.options[i])
 
     # Functions #
     @staticmethod
@@ -71,13 +69,13 @@ class GeoView(discord.ui.View):
         :param interacted: Last user that interacted with nav controls.
         :return: A tuple of the embed, and the asset file used in it.
         """
-        temp_file: str = ""
+        temp_file = ""
         self.crop_image(f'bot/cogs/geo_cog/temp_assets/{FILE_NAME}')
         new_embed = discord.Embed(title="Geoguessr challenge time!",
                                   description="Can you guess where this is? 1 guess per user.",
                                   color=0xF56600)
         new_embed.set_image(url=f"attachment://{FILE_NAME}")
-        new_embed.add_field(name="", value=f'Moves Left: **{self.quota}**', inline=True)
+        new_embed.add_field(name="", value=f'Moves Left: **{QUOTA}**', inline=True)
         new_embed.set_author(name="Geoguessr by yeet.us",
                              icon_url="https://i.imgur.com/ZyGOyTg.png")
         new_embed.set_footer(text=f"{round(api_rest_time)} ms. Use \"?geoguess lb\" for the GeoguessrLeaderboard.",
@@ -109,7 +107,7 @@ class GeoView(discord.ui.View):
         """
         Check to see if api quota is exceeded, disable buttons if so.
         """
-        if self.quota <= 0:
+        if QUOTA <= 0:
             self.disable_btns(True)
             return False
         return True
@@ -164,6 +162,7 @@ class GeoView(discord.ui.View):
             await self.utility_btn_callback(interaction, 'fov', 20)
 
     async def utility_btn_callback(self, interaction: discord.Interaction, parameter: str, amount: int) -> None:
+        global QUOTA
         # Prevent FOV buttons from exceeding limits.
         fov_check: bool = True
         if parameter == "fov":
@@ -173,12 +172,12 @@ class GeoView(discord.ui.View):
         if fov_check:
             self.location_params[parameter] = ((self.location_params[parameter] + amount) % 360)
             if self.verify_quota() and interaction.user.id not in self.users_clicked:
-                raw_image, api_response = await StreetViewStaticApi.geolocate(self.quota, PIC_BASE,
+                raw_image, api_response = await StreetViewStaticApi.geolocate(QUOTA, PIC_BASE,
                                                                               FILE_NAME, self.location_params)
                 embed, other_image_assets = await self.create_embed(api_response, f"{interaction.user.display_name} "
                                                                                   f"adjusted {parameter}")
                 country_sv = discord.File(fp=f'bot/cogs/geo_cog/temp_assets/{FILE_NAME}', filename=FILE_NAME)
-                self.quota -= 1
+                QUOTA -= 1
                 await interaction.edit_original_response(embed=embed,
                                                          attachments=[country_sv, other_image_assets],
                                                          view=self)
@@ -190,8 +189,7 @@ class GeoView(discord.ui.View):
 
 class CountryBTN(discord.ui.Button):
     def __init__(self, parent_self, label: str, emoji, status: str):
-        super().__init__(label=label, style=discord.ButtonStyle.blurple,
-                         emoji=emoji, row=2, custom_id=status)
+        super().__init__(label=label, style=discord.ButtonStyle.blurple, emoji=emoji, row=2, custom_id=status)
         self.repo = GeoRepository()
         self.status = status
         self.parent_self = parent_self
