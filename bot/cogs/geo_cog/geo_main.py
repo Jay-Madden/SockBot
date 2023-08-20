@@ -152,10 +152,7 @@ class GeoGuessCog(commands.Cog):
     @ext.long_help("Displays the GeoguessrLeaderboard")
     @ext.short_help("GeoguessrLeaderboard")
     async def lb(self, ctx) -> None:
-        print("\n\n\nTHIS IS HERE")
-        guild = self.bot.get_guild(703008870338920470)
-        user = guild.get_member(742028507043070023)
-        print(user)
+        guild = self.bot.get_guild(ctx.guild.id)
 
         new_embed = discord.Embed(color=0x00FF61)
         new_embed.set_author(name="Discord Geoguessr by @yeet.us",
