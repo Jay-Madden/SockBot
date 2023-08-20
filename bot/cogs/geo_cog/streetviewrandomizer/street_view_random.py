@@ -42,7 +42,7 @@ class StreetViewRandom:
 
     # Selects a random country from the list of acceptable countries
     @staticmethod
-    def random_country(inputCountry: str) -> dict[str, int]:
+    def random_country(inputCountry: str) -> tuple:
         country, radius = random.choice(list(COUNTRIES.items()))
         while country == inputCountry:
             country, radius = random.choice(list(COUNTRIES.items()))
@@ -82,9 +82,8 @@ class StreetViewRandom:
         # Loop for the amount of samples
         for i in range(args['samples']):
             fai = await self.find_available_image(gdf, args['radius'])
-            catch_error = fai.error_code
             loops: int = 0
-            while catch_error == ERROR:
+            while fai.error_code == ERROR:
                 if loops >= 1:
                     country = "SGP"
                     ro = 25
@@ -100,7 +99,6 @@ class StreetViewRandom:
                 gdf = gdf.loc[gdf['ISO3'] == f"{country}"]
                 gdf = gdf.assign(IMAGES=0)
                 fai = await self.find_available_image(gdf, ro)
-                catch_error = fai.error_code
                 loops += 1
 
             coord = fai.coord
@@ -114,16 +112,16 @@ class StreetViewRandom:
             country_name = country_df["NAME"].values[0]
             gdf.loc[gdf["ISO3"] == country_iso3, "IMAGES"] += 1
 
-            print(f"\n> Image found in {country_iso3} ({country_name}) | "
+            logging.log(1, f"\n> Image found in {country_iso3} ({country_name}) | "
                            f"lon: {coord.lon}, lat: {coord.lat} | attempts: {attempts} "
-                           f"| total elapsed time: {elapsed_time_ms / 1000:.2f}s\n"
-            )
+                           f"| total elapsed time: {elapsed_time_ms / 1000:.2f}s\n")
             total_elapsed_time_ms = total_elapsed_time_ms + int(await self.save_images(
                 coord, args['size'], args['headings'], args['pitches'], args['fovs']
             ))
             logging.log(1, f"\nImage saved!\n Total attempts: {total_attempts} Average number of attempts per "
                            f"sampling: {total_attempts / args['samples']:.2f} "
-                           f"\nTotal elapsed time: {total_elapsed_time_ms / 1000:.2f}s Average elapsed time per sampling: "
+                           f"\nTotal elapsed time: {total_elapsed_time_ms / 1000:.2f}s Average elapsed time per "
+                           f"sampling: "
                            f"{(total_elapsed_time_ms / 1000) / args['samples']:.2f}s")
 
         size = args['size']
@@ -159,13 +157,13 @@ class StreetViewRandom:
         :param radius_m: Grab the nearest streetview within a radius.
         :return: ImageData dataclass.
         """
-        coord: Coordinate = None
+        coord: Coordinate
         country_df = None
         attempts = 0
         total_elapsed_time_ms = 0
         image_found = False
 
-        print(str(country_df) + "looking in")
+        logging.log(1, str(country_df) + "looking in")
         while not image_found:
             start = timer()
             attempts += 1
@@ -178,14 +176,13 @@ class StreetViewRandom:
             random_lon = 86.92497299755392 if isclose(86.92497299755392, random_lon, abs_tol=10**-4) else random_lon
             radius_m = 1000 if isclose(86.92497299755392, random_lon, abs_tol=10**-4) else radius_m
 
-            print(f"\n{attempts}")
+            logging.log(1, f"\n{attempts}")
             coord = Coordinate(random_lat, random_lon)
             status: str = ""
 
             if attempts >= MAX_ATTEMPTS:
                 logging.warning("\nMaximum safe attempts (50) exceeded. Choosing a different country.")
-                returnValue: ImageData = ImageData(ERROR, ERROR, ERROR, ERROR, ERROR)
-                return returnValue
+                return ImageData(None, None, None, None, ERROR)
 
             if coord.within(country_df.geometry.values[0]):
                 coord, status = await API.has_image(coord, radius_m)
