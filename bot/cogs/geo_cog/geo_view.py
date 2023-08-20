@@ -40,7 +40,7 @@ class GeoView(discord.ui.View):
 
     # Functions #
     @staticmethod
-    def crop_image(image_path: str, crop_height=10) -> None:
+    def crop_image(image_path: str, crop_height: int = 10) -> None:
         """
         Crop out the lower 10 pixels of the image.
         :param image_path: String path of the image on the computer.
@@ -83,6 +83,7 @@ class GeoView(discord.ui.View):
         if len(interacted) > 1:
             new_embed.set_footer(text=f"{round(api_rest_time)} ms. {interacted}",
                                  icon_url="https://i.imgur.com/Y4gnqiV.png")
+
         # Adjust thumbnail to account for compass direction
         match self.location_params['heading']:
             case 0:
@@ -93,11 +94,16 @@ class GeoView(discord.ui.View):
                 temp_file = 'southward.png'
             case _:
                 temp_file = 'westward.png'
+
         asset_file = discord.File(f'bot/cogs/geo_cog/assets/{temp_file}', filename=temp_file)
         new_embed.set_thumbnail(url=f'attachment://{temp_file}')
         return new_embed, asset_file
 
-    def disable_btns(self, disable: bool) -> None:
+    def disable_btns(self, disable: bool):
+        """
+        Disables all navigation buttons, can enable them if "disable" is set to false.
+        :return: void
+        """
         [x for x in self.children if x.custom_id == "left"][0].disabled = disable
         [x for x in self.children if x.custom_id == "right"][0].disabled = disable
         [x for x in self.children if x.custom_id == "zoom_in"][0].disabled = disable
@@ -105,7 +111,7 @@ class GeoView(discord.ui.View):
 
     def verify_quota(self) -> bool:
         """
-        Check to see if api quota is exceeded, disable buttons if so.
+        :return: Check to see if api quota is exceeded, disable buttons if so.
         """
         if self.quota <= 0:
             self.disable_btns(True)
