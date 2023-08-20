@@ -98,7 +98,6 @@ class GeoGuessCog(commands.Cog):
         # Correct answer is the first member of the list, prior to shuffling
         # Pick a random country to look at
         random_sample: list = self.generate_country_options()
-        random_sample[0] = "WTH"
 
         # Establish default values
         args = {
@@ -166,7 +165,7 @@ class GeoGuessCog(commands.Cog):
     async def lb(self, ctx) -> None:
         new_embed = discord.Embed(color=0x00FF61)
         new_embed.set_author(name="Discord Geoguessr by @yeet.us",
-                            icon_url="https://i.imgur.com/ZyGOyTg.png")
+                             icon_url="https://i.imgur.com/ZyGOyTg.png")
         lb_output = ""
 
         entries: int = 10 if (await self.repo.return_size()) >= 10 else (await self.repo.return_size())
@@ -199,7 +198,7 @@ class GeoGuessCog(commands.Cog):
 
         new_embed.add_field(name="Leaderboard", value=lb_output, inline=False)
         await ctx.send(embed=new_embed, view=view)
-        asyncio.sleep(2)
+        await asyncio.sleep(2)
 
 
 async def setup(bot: SockBot):
