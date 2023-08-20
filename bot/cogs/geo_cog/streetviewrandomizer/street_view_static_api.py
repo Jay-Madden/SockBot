@@ -18,7 +18,7 @@ class StreetViewStaticApi:
             await self.session.close()
 
     @staticmethod
-    async def geolocate(quota: int, pic_base: str, filename: str, location_params: str) -> tuple[str, float]:
+    async def geolocate(quota: int, pic_base: str, filename: str, location_params: dict) -> tuple[str, float]:
         start = timer()
         if quota > 0:
             curr_session = aiohttp.ClientSession()
