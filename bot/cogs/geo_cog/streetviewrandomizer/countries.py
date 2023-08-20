@@ -36,7 +36,7 @@ COUNTRIES = {
     "IIK": 900,  "DVN": 3000,  "SUY": 2500,    # Innukjuak (CA),    Devon Isl. (CA),  Sulaymaniyah (IQ).
     "BRR": 1400, "QNP": 10000, "DNK": 4000,    # Bahrain,           Quinnipac (CA),   Denmark,
     "LOM": 2000, "FTW": 2000,  "MYT": 4200,    # Lome (Togo)        Freetown (SL),    Mayotte (France)
-    "NUM": 1500, "IRR": 4000,  "TUS": 2000,              # Noumea (NC FRsg),
+    "NUM": 1500, "IRR": 4000,  "TUS": 2000,    # Noumea (NC FRsg),
     "ESH": 200000, "WTH": 500
 }
 
