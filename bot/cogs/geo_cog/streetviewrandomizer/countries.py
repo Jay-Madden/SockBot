@@ -1,7 +1,4 @@
-# COUNTRIES with Google Street View coverage
-# Flag Dictionary of ISO2 UN Country codes
-
-# Available Coverage, manually calibrated values
+# Available Coverage, manually calibrated values of ISO3 countries
 COUNTRIES = {
     "USA": 1250, "FRA": 250,   "ESP": 500,     # USA,               France,           Spain,
     "TWN": 70,   "SVK": 50,    "POL": 100,     # Taiwan,            Slovakia,         Poland,
@@ -43,6 +40,7 @@ COUNTRIES = {
     "ESH": 200000, "WTH": 500
 }
 
+# Flag Dictionary of ISO2 UN Country codes
 FLAG_DICTIONARY = {
     "AD": "🇦🇩", "AE": "🇦🇪", "AF": "🇦🇫", "AG": "🇦🇬", "AI": "🇦🇮", "AL": "🇦🇱", "AM": "🇦🇲", "AO": "🇦🇴",
     "AQ": "🇦🇶", "AR": "🇦🇷", "AS": "🇦🇸", "AT": "🇦🇹", "AU": "🇦🇺", "AW": "🇦🇼", "AX": "🇦🇽", "AZ": "🇦🇿",
