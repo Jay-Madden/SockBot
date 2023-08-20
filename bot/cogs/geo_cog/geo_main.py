@@ -6,9 +6,7 @@ import bot.cogs.geo_cog.streetviewrandomizer.countries as flagdict
 import bot.extensions as ext
 import discord
 import discord.ext.commands as commands
-import geopandas as gpd
 import logging
-import random
 from bot.cogs.geo_cog.geo_view import GeoView as GeoView
 from bot.cogs.geo_cog.streetviewrandomizer.countries import COUNTRIES
 from bot.cogs.geo_cog.streetviewrandomizer.street_view_random import StreetViewRandom
