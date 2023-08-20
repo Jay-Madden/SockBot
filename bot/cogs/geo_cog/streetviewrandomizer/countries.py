@@ -3,7 +3,7 @@
 
 # Available Coverage, manually calibrated values
 COUNTRIES = {
-    "USA": 1250, "FRA": 250,   "ESP": 200,     # USA,               France,           Spain,
+    "USA": 1250, "FRA": 250,   "ESP": 500,     # USA,               France,           Spain,
     "TWN": 70,   "SVK": 50,    "POL": 100,     # Taiwan,            Slovakia,         Poland,
     "IRL": 75,   "LVA": 150,   "SGP": 25,      # Ireland,           Latvia,           Singapore,
     "ITA": 100,  "CZE": 100,   "RUS": 2500,    # Italy,             Czechia,          Russia,
@@ -11,7 +11,7 @@ COUNTRIES = {
     "BRA": 2000, "BGR": 100,   "BLL": 10,      # Brazil,            Bulgaria,         Berlin (DEU),
     "CWN": 10,   "SPO": 10,    "BOO": 10,      # Cape Town (SA),    Sao Paulo (BZ),   Bogota (CO),
     "ATL": 15,   "TOT": 10,    "DET": 15,      # Atlanta (USA),     Toronto (CAN),    Detroit (USA),
-    "PJT": 20,   "PXA": 4,     "TKY": 10,      # Pretoria (SA),     Paris (FRA),      Tokyo (JAPAN),
+    "PJT": 20,   "PXA": 4,     "TKY": 50,      # Pretoria (SA),     Paris (FRA),      Tokyo (JAPAN),
     "TLL": 10,   "AAA": 20,    "MMM": 20,      # Tel-Aviv (IS),     Athens (GRE),     Miami (USA),
     "HST": 20,   "PWJ": 10,    "STD": 15,      # Houston (USA),     Philadelphia(US), Santo Domingo (DR),
     "MSW": 30,   "CBA": 15,    "BNK": 15,      # Moscow (RUS),      Curibitas (BZ),   Bangkok (TH),
@@ -34,8 +34,13 @@ COUNTRIES = {
     "IOY": 900,  "PAL": 6000,  "MDY": 1000,    # BOIT (UK),         Palau,            Midway Atoll (US),
     "NYC": 5,    "AGQ": 4500,  "TGQ": 250000,  # New York (US),     Algonquin (CA),   Torngat Natl Park (CA),
     "RST": 5000, "AIK": 7000,  "SAK": 10000,   # Resolute (CA),     Alavik (CA),      Sanikiluaq (CA),
-    "KAK": 5000, "CHE": 50,    "AQA": 10000,   # Kamchatka (RU),    Switzerland       Base Yelcho (AQ)
-    "MLT": 50                                  # Malta
+    "KAK": 5000, "CHE": 50,    "AQA": 10000,   # Kamchatka (RU),    Switzerland,      Base Yelcho (AQ),
+    "MLT": 50,   "AUK": 10,    "BNN": 10000,   # Malta,             Auckland (NZ)     Bhutan,
+    "IIK": 900,  "DVN": 3000,  "SUY": 2500,    # Innukjuak (CA),    Devon Isl. (CA),  Sulaymaniyah (IQ).
+    "BRR": 1400, "QNP": 10000, "DNK": 4000,    # Bahrain,           Quinnipac (CA),   Denmark,
+    "LOM": 2000, "FTW": 2000,  "MYT": 4200,    # Lome (Togo)        Freetown (SL),    Mayotte (France)
+    "NUM": 1500, "IRR": 4000,  "TUS": 2000,              # Noumea (NC FRsg),
+    "ESH": 200000, "WTH": 500
 }
 
 FLAG_DICTIONARY = {

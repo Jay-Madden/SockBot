@@ -2,16 +2,16 @@ from bot.cogs.geo_cog.streetviewrandomizer.street_view_static_api import StreetV
 from bot.data.georepository import GeoRepository
 from timeit import default_timer as timer
 from PIL import Image
-import random
+import asyncio
 import discord
 import discord.ui
-import asyncio
 import math
 import nest_asyncio
+import random
 
 nest_asyncio.apply()
 
-FILENAME: str = 'StreetView.jpg'
+FILE_NAME: str = 'StreetView.jpg'
 PIC_BASE: str = 'https://maps.googleapis.com/maps/api/streetview?'
 
 
@@ -65,12 +65,18 @@ class GeoView(discord.ui.View):
         return False
 
     async def create_embed(self, api_rest_time: float, interacted: str) -> tuple[discord.Embed, discord.File]:
+        """
+        Create the embed which displays the game.
+        :param api_rest_time: API response time.
+        :param interacted: Last user that interacted with nav controls.
+        :return: A tuple of the embed, and the asset file used in it.
+        """
         temp_file: str = ""
-        self.crop_image(f'bot/cogs/geo_cog/temp_assets/{FILENAME}')
+        self.crop_image(f'bot/cogs/geo_cog/temp_assets/{FILE_NAME}')
         new_embed = discord.Embed(title="Geoguessr challenge time!",
                                   description="Can you guess where this is? 1 guess per user.",
                                   color=0xF56600)
-        new_embed.set_image(url=f"attachment://{FILENAME}")
+        new_embed.set_image(url=f"attachment://{FILE_NAME}")
         new_embed.add_field(name="", value=f'Moves Left: **{self.quota}**', inline=True)
         new_embed.set_author(name="Geoguessr by yeet.us",
                              icon_url="https://i.imgur.com/ZyGOyTg.png")
@@ -168,10 +174,10 @@ class GeoView(discord.ui.View):
             self.location_params[parameter] = ((self.location_params[parameter] + amount) % 360)
             if self.verify_quota() and interaction.user.id not in self.users_clicked:
                 raw_image, api_response = await StreetViewStaticApi.geolocate(self.quota, PIC_BASE,
-                                                                              FILENAME, self.location_params)
+                                                                              FILE_NAME, self.location_params)
                 embed, other_image_assets = await self.create_embed(api_response, f"{interaction.user.display_name} "
                                                                                   f"adjusted {parameter}")
-                country_sv = discord.File(fp=f'bot/cogs/geo_cog/temp_assets/{FILENAME}', filename=FILENAME)
+                country_sv = discord.File(fp=f'bot/cogs/geo_cog/temp_assets/{FILE_NAME}', filename=FILE_NAME)
                 self.quota -= 1
                 await interaction.edit_original_response(embed=embed,
                                                          attachments=[country_sv, other_image_assets],

@@ -113,9 +113,9 @@ class StreetViewRandom:
             country_name = country_df["NAME"].values[0]
             gdf.loc[gdf["ISO3"] == country_iso3, "IMAGES"] += 1
 
-            logging.log(2, f"\n> Image found in {country_iso3} ({country_name}) | "
+            print(f"\n> Image found in {country_iso3} ({country_name}) | "
                            f"lon: {coord.lon}, lat: {coord.lat} | attempts: {attempts} "
-                           f"| total elapsed time: {elapsed_time_ms / 1000:.2f}s"
+                           f"| total elapsed time: {elapsed_time_ms / 1000:.2f}s\n"
             )
             total_elapsed_time_ms = total_elapsed_time_ms + int(await self.save_images(
                 coord, args['size'], args['headings'], args['pitches'], args['fovs']
@@ -164,6 +164,7 @@ class StreetViewRandom:
         total_elapsed_time_ms = 0
         image_found = False
 
+        print(str(country_df) + "looking in")
         while not image_found:
             start = timer()
             attempts += 1
