@@ -64,24 +64,12 @@ class GeoGuessCog(commands.Cog):
         return flagdict.FLAG_DICTIONARY[two_digit_code]
 
     @staticmethod
-    def get_parameter(three_digit_code: str, iso2: bool, country: bool, city: bool) -> str:
-        gdf: gpd.GeoDataFrame = gpd.read_file(
-            "bot/cogs/geo_cog/streetviewrandomizer/TM_WORLD_BORDERS-0.3/TM_WORLD_BORDERS-0.32.shp")
-        if iso2:
-            return gdf.loc[gdf['ISO3'] == three_digit_code, 'ISO2'].squeeze()
-        elif country:
-            return gdf.loc[gdf['ISO3'] == three_digit_code, 'NAME'].squeeze()
-        elif city:
-            return gdf.loc[gdf['ISO3'] == three_digit_code, 'CITY_NAME'].squeeze()
+    def get_parameter(three_digit_code: str, parameter: str) -> str:
+        return StreetViewRandom.get_parameter(three_digit_code, parameter)
 
-    def generate_country_options(self) -> list:
-        random_sample = random.sample(list(COUNTRIES.keys()), 5)
-        # Convert to ISO2, check for duplicates
-        iso2_conversion = [self.get_parameter(x, True, False, False) for x in random_sample]
-        while len(iso2_conversion) != len([*set(iso2_conversion)]):
-            random_sample = random.sample(list(COUNTRIES.keys()), 5)
-            iso2_conversion = [self.get_parameter(x, True, False, False) for x in random_sample]
-        return random_sample
+    @staticmethod
+    def generate_country_options() -> list:
+        return StreetViewRandom.generate_country_options()
 
     # Main command for running the game.
     @ext.command()
@@ -117,8 +105,8 @@ class GeoGuessCog(commands.Cog):
         # Grab random street-view from the country, compute api response time
         start = timer()
 
-        randomViewGrab = StreetViewRandom(args)
-        execute = await randomViewGrab.run(args)
+        random_view_grab = StreetViewRandom(args)
+        execute = await random_view_grab.run(args)
         new_selections: list = execute[4]
 
         end = timer()
@@ -135,27 +123,28 @@ class GeoGuessCog(commands.Cog):
 
         # Some entries have a city name attached, we retrieve that here.
         full_name = ""
-        if len(str(self.get_parameter(random_sample[0], False, False, True))) > 1 and not "nan":
-            full_name = str(self.get_parameter(random_sample[0], False, False, True))
+        if len(str(self.get_parameter(random_sample[0], "city"))) > 1 and not "nan":
+            full_name = str(self.get_parameter(random_sample[0], "city"))
             full_name += " "
-            full_name += str(self.get_parameter(random_sample[0], False, True, False))
+            full_name += str(self.get_parameter(random_sample[0], "country"))
 
         labels_and_emojis: dict[str] = {
             'labels': [],
             'emojis': []
         }
+
         for i in range(5):
             iso3 = random_sample[i]
-            labels_and_emojis['labels'].append(self.get_parameter(iso3, False, True, False))
-            labels_and_emojis['emojis'].append(self.get_country_emoji(self.get_parameter(iso3, True, False, False)))
+            labels_and_emojis['labels'].append(self.get_parameter(iso3, "country"))
+            labels_and_emojis['emojis'].append(self.get_country_emoji(self.get_parameter(iso3, "iso2")))
 
-        newGeoView = GeoView(args, labels_and_emojis, full_name)
+        new_geo_view = GeoView(args, labels_and_emojis, full_name)
 
         # Create the initial embed.
-        N = await newGeoView.create_embed(api_res_time, " ")
+        N = await new_geo_view.create_embed(api_res_time, " ")
         file = discord.File(fp=f'bot/cogs/geo_cog/temp_assets/{file_name}', filename=file_name)
-        await ctx.send(files=[file, N[1]], embed=N[0], view=newGeoView)
-        await newGeoView.wait()
+        await ctx.send(files=[file, N[1]], embed=N[0], view=new_geo_view)
+        await new_geo_view.wait()
 
     @ext.command()
     @commands.cooldown(1, 30, commands.BucketType.user)
@@ -163,6 +152,11 @@ class GeoGuessCog(commands.Cog):
     @ext.long_help("Displays the GeoguessrLeaderboard")
     @ext.short_help("GeoguessrLeaderboard")
     async def lb(self, ctx) -> None:
+        print("\n\n\nTHIS IS HERE")
+        guild = self.bot.get_guild(703008870338920470)
+        user = guild.get_member(742028507043070023)
+        print(user)
+
         new_embed = discord.Embed(color=0x00FF61)
         new_embed.set_author(name="Discord Geoguessr by @yeet.us",
                              icon_url="https://i.imgur.com/ZyGOyTg.png")
@@ -193,7 +187,7 @@ class GeoGuessCog(commands.Cog):
 
         for i in range(entries):
             lb_output += f"**{i+1}.** " \
-                        f"<@!{(await self.repo.sort_and_return())[i].get('user_id')}> " \
+                        f"{guild.get_member((await self.repo.sort_and_return())[i].get('user_id'))} " \
                         f" **{(await self.repo.sort_and_return())[i].get('score')} points**\n"
 
         new_embed.add_field(name="Leaderboard", value=lb_output, inline=False)
