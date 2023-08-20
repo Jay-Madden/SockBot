@@ -43,28 +43,44 @@ class StreetViewRandom:
     # Selects a random country from the list of acceptable countries
     @staticmethod
     def random_country(inputCountry: str) -> tuple:
+        """
+        Randomly select a country, excluding ones that match the input.
+        :param inputCountry: Input country to not match.
+        :return: a tuple of the country and radius from the list.
+        """
         country, radius = random.choice(list(COUNTRIES.items()))
         while country == inputCountry:
             country, radius = random.choice(list(COUNTRIES.items()))
         return country, radius
 
     @staticmethod
-    def get_parameter(three_digit_code: str, iso2: bool, country: bool, city: bool) -> str:
+    def get_parameter(three_digit_code: str, parameter: str) -> str:
+        """
+        Get an image from Google Street View Static API.
+        :param three_digit_code: Input ISO3 country info.
+        :param parameter: The parameter to check for: iso2 or country or city.
+        :return: ImageData dataclass.
+        """
         gdf = gpd.read_file("bot/cogs/geo_cog/streetviewrandomizer/TM_WORLD_BORDERS-0.3/TM_WORLD_BORDERS-0.32.shp")
-        if iso2:
+        if parameter == "iso2":
             return gdf.loc[gdf['ISO3'] == three_digit_code, 'ISO2'].squeeze()
-        elif country:
+        elif parameter == "country":
             return gdf.loc[gdf['ISO3'] == three_digit_code, 'NAME'].squeeze()
-        elif city:
+        elif parameter == "city":
             return gdf.loc[gdf['ISO3'] == three_digit_code, 'CITY_NAME'].squeeze()
 
-    def generate_country_options(self) -> list[str]:
+    @staticmethod
+    def generate_country_options() -> list[str]:
+        """
+        Generate a list of 5 countries which are not duplicates.
+        :return: A list.
+        """
         random_sample = random.sample(list(COUNTRIES.keys()), 5)
         # Convert to ISO2, check for duplicates
-        iso2_conversion = [self.get_parameter(x, True, False, False) for x in random_sample]
+        iso2_conversion = [StreetViewRandom.get_parameter(x, "iso2") for x in random_sample]
         while len(iso2_conversion) != len([*set(iso2_conversion)]):
             random_sample = random.sample(list(COUNTRIES.keys()), 5)
-            iso2_conversion = [self.get_parameter(x, True, False, False) for x in random_sample]
+            iso2_conversion = [StreetViewRandom.get_parameter(x, "iso2") for x in random_sample]
         return random_sample
 
     async def run(self, args: dict) -> tuple[str, float, float, str, list[str]]:
