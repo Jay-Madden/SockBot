@@ -1,5 +1,5 @@
 # Vineet Saraf
-# August 11th, 2023
+# August 20th, 2023
 import asyncio
 import bot.bot_secrets as bot_secrets
 import bot.cogs.geo_cog.streetviewrandomizer.countries as flagdict
@@ -151,7 +151,6 @@ class GeoGuessCog(commands.Cog):
     @ext.short_help("GeoguessrLeaderboard")
     async def lb(self, ctx) -> None:
         guild = self.bot.get_guild(ctx.guild.id)
-
         new_embed = discord.Embed(color=0x00FF61)
         new_embed.set_author(name="Discord Geoguessr by @yeet.us",
                              icon_url="https://i.imgur.com/ZyGOyTg.png")
