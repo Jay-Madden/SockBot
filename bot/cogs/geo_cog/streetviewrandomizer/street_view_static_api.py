@@ -1,13 +1,14 @@
-import aiohttp
+import aiohttp as aiohttp
 import asyncio
-from bot.cogs.geo_cog.streetviewrandomizer.coordinate import Coordinate
 import bot.bot_secrets as bot_secrets
-import nest_asyncio
 import json
 import logging
+import nest_asyncio
+from bot.cogs.geo_cog.streetviewrandomizer.coordinate import Coordinate
+from timeit import default_timer as timer
 
-endpoint = "https://maps.googleapis.com/maps/api/streetview"
-session = aiohttp.ClientSession()
+ENDPOINT = "https://maps.googleapis.com/maps/api/streetview"
+SESSION = aiohttp.ClientSession()
 nest_asyncio.apply()
 
 
@@ -16,68 +17,78 @@ class StreetViewStaticApi:
         if not self.session.closed:
             await self.session.close()
 
-    def has_image(self, coord: Coordinate, radius_m: int) -> tuple[bool, Coordinate]:
-        """
-        Check if the API key exists.
-        """
+    @staticmethod
+    async def geolocate(quota: int, pic_base: str, filename: str, location_params: dict) -> tuple[str, float]:
+        start = timer()
+        if quota > 0:
+            curr_session = aiohttp.ClientSession()
+            await asyncio.sleep(1)
+            async with curr_session.get(url=pic_base,
+                                        params=location_params,
+                                        allow_redirects=False) as resp:
+                pic_response = await resp.read()
+                await curr_session.close()
+                await asyncio.sleep(1)
+                f = open(f'bot/cogs/geo_cog/temp_assets/{filename}', 'wb')
+                f.write(pic_response)
+                f.close()
+
+                end = timer()
+                api_rest_time = (end - start) * 1000
+                return filename, api_rest_time
+
+    @staticmethod
+    async def has_image(coord: Coordinate, radius_m: int) -> tuple[Coordinate, bool]:
+        # Check if the API key exists.
         if bot_secrets.secrets.geocode_key is None:
             raise Exception("API key is required. Use --api-key or set the GOOGLE_MAPS_API_KEY environment variable.")
         """
         Check if the location has an image.
-        :param `coord`: Coordinate.
-        :param `radius_m`: Radius (in meters) to search for an image.
+        :param coord: Coordinate.
+        :param radius_m: Radius (in meters) to search for an image.
         :return: Tuple containing a boolean indicating if an image was found and the coordinate.
         """
-        async def getThing():
-            async with session.get(url=f"{endpoint}/metadata", params={"location": f"{coord.lat},{coord.lon}",
-                                                                       "key": bot_secrets.secrets.geocode_key,
-                                                                       "radius": radius_m},
-                                   allow_redirects=False) as resp:
-                return json.loads(await resp.text())
+        async with SESSION.get(url=f"{ENDPOINT}/metadata", params={"location": f"{coord.lat},{coord.lon}",
+                                                                   "key": bot_secrets.secrets.geocode_key,
+                                                                   "radius": radius_m},
+                               allow_redirects=False) as resp:
 
-        loop = asyncio.get_running_loop()
-        response = asyncio.get_event_loop().run_until_complete( getThing() )
+            response = json.loads(await resp.text())
 
-        image_found = response["status"] == "OK"
+            if response["status"] == "OVER_QUERY_LIMIT":
+                logging.warning("You have exceeded your daily quota or per-second quota for this API.")
 
-        if response["status"] == "OVER_QUERY_LIMIT":
-            logging.warning("You have exceeded your daily quota or per-second quota for this API.")
-            image_found = False
+            if response["status"] == "REQUEST_DENIED":
+                logging.warning("Your request was denied by the server. Check your API key.")
 
-        if response["status"] == "REQUEST_DENIED":
-            logging.warning("Your request was denied by the server. Check your API key.")
-            image_found = False
+            if response["status"] == "UNKNOWN_ERROR":
+                logging.warning("An unknown error occurred on the server.")
 
-        if response["status"] == "UNKNOWN_ERROR":
-            logging.warning("An unknown error occurred on the server.")
-            image_found = False
+            if 'location' in response:
+                lat = response["location"]["lat"]
+                lon = response["location"]["lng"]
+                coord = Coordinate(lat, lon)
 
-        if "location" in response:
-            lat = response["location"]["lat"]
-            lon = response["location"]["lng"]
-            coord = Coordinate(lat, lon)
+            return coord, response["status"]
 
-        self.close_session()
-        return image_found, coord
-
-    def get_image(self, coord: Coordinate, size: str, heading=180, pitch=0, fov=110) -> bytes:
+    @staticmethod
+    async def get_image(coord: Coordinate, size: str, heading=180, pitch=0, fov=110) -> bytes:
         """
         Get an image from Google Street View Static API.
-        :param `coord`: Coordinate.
-        :param `size`: Image size.
-        :param `heading`: Heading, defaults to 180.
-        :param `pitch`: Pitch, defaults to 0.
-        :param `fov`: Field of view, defaults to 110.
+        :param coord: Coordinate.
+        :param size: Image size.
+        :param heading: Heading, defaults to 180.
+        :param pitch: Pitch, defaults to 0.
+        :param fov: Field of view, defaults to 110.
         :return: Image in bytes.
         """
-        async def getThing():
-            async with session.get(url=endpoint,
-                                   params={"location": f"{coord.lat},{coord.lon}", "size": size, "heading": heading,
-                                           "pitch": pitch, "fov": fov, "key": bot_secrets.secrets.geocode_key},
-                                   allow_redirects=False) as resp:
-                return await resp.read()
-        response = asyncio.get_event_loop().run_until_complete( getThing() )
-        self.close_session()
-        return response
+        async with SESSION.get(url=ENDPOINT,
+                               params={"location": f"{coord.lat},{coord.lon}", "size": size, "heading": heading,
+                                       "pitch": pitch, "fov": fov, "key": bot_secrets.secrets.geocode_key},
+                               allow_redirects=False) as resp:
 
+            response = await resp.read()
 
+            await asyncio.sleep(1)
+
+            return response
