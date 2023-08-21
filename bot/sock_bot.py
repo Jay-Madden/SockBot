@@ -225,7 +225,10 @@ class SockBot(commands.Bot):
             embed = discord.Embed(title='Command Invoke Error', color=Colors.Error)
             embed.description = f'An exception has occurred while running the command:\n{err.__cause__}'
             embed.set_footer(text=str(inter.user), icon_url=inter.user.display_avatar.url)
-            await inter.followup.send(embed=embed, ephemeral=True)
+            if inter.response.is_done():
+                await inter.followup.send(embed=embed)
+            else:
+                await inter.response.send_message(embed=embed)
 
         await self.global_error_handler(err, trace=traceback.format_exc())
 
