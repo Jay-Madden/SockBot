@@ -139,9 +139,9 @@ class GeoGuessCog(commands.Cog):
         new_geo_view = GeoView(args, labels_and_emojis, full_name)
 
         # Create the initial embed.
-        N = await new_geo_view.create_embed(api_res_time, " ")
+        initial_embed = await new_geo_view.create_embed(api_res_time, " ")
         file = discord.File(fp=f'bot/cogs/geo_cog/temp_assets/{file_name}', filename=file_name)
-        await ctx.send(files=[file, N[1]], embed=N[0], view=new_geo_view)
+        await ctx.send(files=[file, initial_embed[1]], embed=initial_embed[0], view=new_geo_view)
         await new_geo_view.wait()
 
     @ext.command()

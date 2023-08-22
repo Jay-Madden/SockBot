@@ -34,8 +34,8 @@ class GeoView(discord.ui.View):
         self.options: list = [CountryBTN(self, labels['labels'][x], labels['emojis'][x], "correct") if x == 0 else
                               CountryBTN(self, labels['labels'][x], labels['emojis'][x], f"incorrect{x}")
                               for x in range(5)]
-        random.shuffle(self.options) 
-        for i in range(5): 
+        random.shuffle(self.options)
+        for i in range(5):
             self.add_item(self.options[i])
 
     # Functions #
