@@ -42,14 +42,14 @@ class StreetViewRandom:
 
     # Selects a random country from the list of acceptable countries
     @staticmethod
-    def random_country(inputCountry: str) -> tuple:
+    def random_country(input_country: str) -> tuple[str, int]:
         """
         Randomly select a country, excluding ones that match the input.
         :param inputCountry: Input country to not match.
         :return: a tuple of the country and radius from the list.
         """
         country, radius = random.choice(list(COUNTRIES.items()))
-        while country == inputCountry:
+        while country == input_country:
             country, radius = random.choice(list(COUNTRIES.items()))
         return country, radius
 
