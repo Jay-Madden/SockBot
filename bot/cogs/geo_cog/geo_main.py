@@ -56,11 +56,6 @@ class GeoGuessCog(commands.Cog):
         self.bot = bot
         self.repo = GeoRepository()
 
-    # Read from a dictionary, flagdict.py, the associate emoji for a (ISO3 -> ISO2) country
-    @staticmethod
-    def get_country_emoji(two_digit_code: str) -> str:
-        return flagdict.FLAG_DICTIONARY[two_digit_code]
-
     # Main command for running the game.
     @ext.command()
     @commands.cooldown(1, 180, commands.BucketType.user)
@@ -126,7 +121,7 @@ class GeoGuessCog(commands.Cog):
         for i in range(5):
             iso3 = random_sample[i]
             labels_and_emojis['labels'].append(StreetViewRandom.get_parameter(iso3, "country"))
-            labels_and_emojis['emojis'].append(self.get_country_emoji(StreetViewRandom.get_parameter(iso3, "iso2")))
+            labels_and_emojis['emojis'].append(flagdict.FLAG_DICTIONARY[StreetViewRandom.get_parameter(iso3, "iso2")])
 
         new_geo_view = GeoView(args, labels_and_emojis, full_name)
 
