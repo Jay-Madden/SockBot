@@ -179,7 +179,6 @@ class StreetViewRandom:
         total_elapsed_time_ms = 0
         image_found = False
 
-        logging.log(1, str(country_df) + "looking in")
         while not image_found:
             start = timer()
             attempts += 1
@@ -197,7 +196,7 @@ class StreetViewRandom:
             status: str = ""
 
             if attempts >= MAX_ATTEMPTS:
-                logging.warning("\nMaximum safe attempts (50) exceeded. Choosing a different country.")
+                logging.warning(f"\nMaximum safe attempts ({MAX_ATTEMPTS}) exceeded. Choosing a different country.")
                 return ImageData(None, None, None, None, ERROR)
 
             if coord.within(country_df.geometry.values[0]):
