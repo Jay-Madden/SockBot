@@ -61,10 +61,6 @@ class GeoGuessCog(commands.Cog):
     def get_country_emoji(two_digit_code: str) -> str:
         return flagdict.FLAG_DICTIONARY[two_digit_code]
 
-    @staticmethod
-    def generate_country_options() -> list:
-        return StreetViewRandom.generate_country_options()
-
     # Main command for running the game.
     @ext.command()
     @commands.cooldown(1, 180, commands.BucketType.user)
@@ -79,7 +75,7 @@ class GeoGuessCog(commands.Cog):
 
         # Correct answer is the first member of the list, prior to shuffling
         # Pick a random country to look at
-        random_sample: list = self.generate_country_options()
+        random_sample: list = StreetViewRandom.generate_country_options()
 
         # Establish default values
         args = {
