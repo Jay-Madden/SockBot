@@ -159,8 +159,8 @@ class GeoGuessCog(commands.Cog):
                 msg = f'You are ranked **#{rank}** and you have **{score} points**'
                 await interaction.response.send_message(msg, ephemeral=True)
             else:
-                await interaction.response.send_message(f'You aren\'t even on the board, '
-                                                        f'try a game out! Run ?geoguess game', ephemeral=True)
+                await interaction.response.send_message("You aren't even on the board, "
+                                                        "try a game out! Run ?geoguess game", ephemeral=True)
 
         view = View(timeout=None)
         rank_btn.callback = view_rank
