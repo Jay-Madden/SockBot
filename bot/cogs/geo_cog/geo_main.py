@@ -62,10 +62,6 @@ class GeoGuessCog(commands.Cog):
         return flagdict.FLAG_DICTIONARY[two_digit_code]
 
     @staticmethod
-    def get_parameter(three_digit_code: str, parameter: str) -> str:
-        return StreetViewRandom.get_parameter(three_digit_code, parameter)
-
-    @staticmethod
     def generate_country_options() -> list:
         return StreetViewRandom.generate_country_options()
 
@@ -121,10 +117,10 @@ class GeoGuessCog(commands.Cog):
 
         # Some entries have a city name attached, we retrieve that here.
         full_name = ""
-        if len(str(self.get_parameter(random_sample[0], "city"))) > 1 and not "nan":
-            full_name = str(self.get_parameter(random_sample[0], "city"))
+        if len(str(StreetViewRandom.get_parameter(random_sample[0], "city"))) > 1 and not "nan":
+            full_name = str(StreetViewRandom.get_parameter(random_sample[0], "city"))
             full_name += " "
-            full_name += str(self.get_parameter(random_sample[0], "country"))
+            full_name += str(StreetViewRandom.get_parameter(random_sample[0], "country"))
 
         labels_and_emojis: dict[str] = {
             'labels': [],
@@ -133,8 +129,8 @@ class GeoGuessCog(commands.Cog):
 
         for i in range(5):
             iso3 = random_sample[i]
-            labels_and_emojis['labels'].append(self.get_parameter(iso3, "country"))
-            labels_and_emojis['emojis'].append(self.get_country_emoji(self.get_parameter(iso3, "iso2")))
+            labels_and_emojis['labels'].append(StreetViewRandom.get_parameter(iso3, "country"))
+            labels_and_emojis['emojis'].append(self.get_country_emoji(StreetViewRandom.get_parameter(iso3, "iso2")))
 
         new_geo_view = GeoView(args, labels_and_emojis, full_name)
 
