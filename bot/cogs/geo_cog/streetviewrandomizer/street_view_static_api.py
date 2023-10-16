@@ -13,22 +13,16 @@ nest_asyncio.apply()
 
 
 class StreetViewStaticApi:
-    async def close_session(self):
-        if not self.session.closed:
-            await self.session.close()
-
     @staticmethod
     async def geolocate(quota: int, pic_base: str, filename: str, location_params: dict) -> tuple[str, float]:
         start = timer()
         if quota > 0:
             curr_session = aiohttp.ClientSession()
-            await asyncio.sleep(1)
             async with curr_session.get(url=pic_base,
                                         params=location_params,
                                         allow_redirects=False) as resp:
                 pic_response = await resp.read()
                 await curr_session.close()
-                await asyncio.sleep(1)
                 f = open(f'bot/cogs/geo_cog/temp_assets/{filename}', 'wb')
                 f.write(pic_response)
                 f.close()
