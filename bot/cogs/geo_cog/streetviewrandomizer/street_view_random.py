@@ -21,7 +21,7 @@ run the following command before the if-statement in find_available_image():
 """
 API = StreetViewStaticApi()
 MAX_ATTEMPTS: int = 50
-IMG_PATH: str = f"bot/cogs/geo_cog/temp_assets/StreetView.jpg"
+IMG_PATH: str = "bot/cogs/geo_cog/temp_assets/StreetView.jpg"
 ERROR: int = 101
 SHAPE_FILE: str = "bot/cogs/geo_cog/streetviewrandomizer/TM_WORLD_BORDERS-0.3/TM_WORLD_BORDERS-0.32.shp"
 
@@ -96,7 +96,7 @@ class StreetViewRandom:
         total_elapsed_time_ms = 0
 
         # Loop for the amount of samples
-        for i in range(args['samples']):
+        for _ in range(args['samples']):
             fai = await self.find_available_image(gdf, args['radius'])
             loops: int = 0
             while fai.error_code == ERROR:
@@ -209,8 +209,7 @@ class StreetViewRandom:
             if status == "OK":
                 break
 
-        returnValue: ImageData = ImageData(coord, country_df, attempts, total_elapsed_time_ms, 0)
-        return returnValue
+        return ImageData(coord, country_df, attempts, total_elapsed_time_ms, 0)
 
     # Uses the sample function to get a random row from the data table
     @staticmethod
