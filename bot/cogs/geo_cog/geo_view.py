@@ -5,7 +5,7 @@ import math
 import nest_asyncio
 import random
 from bot.cogs.geo_cog.streetviewrandomizer.street_view_static_api import StreetViewStaticApi
-from bot.data.georepository import GeoRepository
+from bot.data.geo_repository import GeoRepository
 from timeit import default_timer as timer
 from PIL import Image
 
@@ -177,10 +177,10 @@ class GeoView(discord.ui.View):
         if fov_check:
             self.location_params[parameter] = ((self.location_params[parameter] + amount) % 360)
             if self.verify_quota() and interaction.user.id not in self.users_clicked:
-                raw_image, api_response = await StreetViewStaticApi.geolocate(self.quota, PIC_BASE,
-                                                                              FILE_NAME, self.location_params)
-                embed, other_image_assets = await self.create_embed(api_response, f"{interaction.user.display_name} "
-                                                                                  f"adjusted {parameter}")
+                api_response: tuple[str, float] = await StreetViewStaticApi.geolocate(self.quota, PIC_BASE,
+                                                                                      FILE_NAME, self.location_params)
+                embed, other_image_assets = await self.create_embed(api_response[1], f"{interaction.user.display_name} "
+                                                                                     f"adjusted {parameter}")
                 country_sv = discord.File(fp=f'bot/cogs/geo_cog/temp_assets/{FILE_NAME}', filename=FILE_NAME)
                 self.quota -= 1
                 await interaction.edit_original_response(embed=embed,
