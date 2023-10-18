@@ -248,10 +248,9 @@ class StreetViewRandom:
         """
         start = timer()
 
-        img: bytes = await API.get_image(coord, size, heading=headings, pitch=pitches, fov=fovs)
-        img: bytes = Image.open(BytesIO(img))
-
-        img.save(IMG_PATH)
+        img_data: bytes = await API.get_image(coord, size, heading=headings, pitch=pitches, fov=fovs)
+        image = Image.open(BytesIO(img_data))
+        image.save(IMG_PATH)
 
         end = timer()
         total_elapsed_time_ms = (end - start) * 1000
