@@ -10,7 +10,7 @@ import logging
 from bot.cogs.geo_cog.geo_view import GeoView as GeoView
 from bot.cogs.geo_cog.streetviewrandomizer.countries import COUNTRIES
 from bot.cogs.geo_cog.streetviewrandomizer.street_view_random import StreetViewRandom
-from bot.data.georepository import GeoRepository
+from bot.data.geo_repository import GeoRepository
 from bot.sock_bot import SockBot
 from discord.ui import Button, View
 from timeit import default_timer as timer
@@ -66,7 +66,7 @@ class GeoGuessCog(commands.Cog):
         file_name = "StreetView.jpg"
         api_key = bot_secrets.secrets.geocode_key
 
-        await ctx.send("I'm blindfolded throwing darts at the map, gimme a sec...", delete_after=5)
+        message = await ctx.send("I'm blindfolded throwing darts at the map, gimme a sec...")
 
         # Correct answer is the first member of the list, prior to shuffling
         # Pick a random country to look at
@@ -92,19 +92,19 @@ class GeoGuessCog(commands.Cog):
 
         random_view_grab = StreetViewRandom(args)
         execute = await random_view_grab.run(args)
-        new_selections: list = execute[4]
+        new_selections: list = execute.new_selection
 
         end = timer()
         api_res_time: float = (end - start) * 1000
 
         # In case StreetViewRandom switches countries
         if len(new_selections) > 0:
-            random_sample = execute[4]
+            random_sample = execute.new_selection
         else:
-            random_sample[0] = execute[3]
+            random_sample[0] = execute.iso3
 
         # Grab location and URL data
-        args['location'] = f"{execute[1]},{execute[2]}"
+        args['location'] = f"{execute.latitude},{execute.longitude}"
 
         # Some entries have a city name attached, we retrieve that here.
         full_name = ""
@@ -128,6 +128,7 @@ class GeoGuessCog(commands.Cog):
         # Create the initial embed.
         initial_embed = await new_geo_view.create_embed(api_res_time, " ")
         file = discord.File(fp=f'bot/cogs/geo_cog/temp_assets/{file_name}', filename=file_name)
+        await message.delete()
         await ctx.send(files=[file, initial_embed[1]], embed=initial_embed[0], view=new_geo_view)
         await new_geo_view.wait()
 
