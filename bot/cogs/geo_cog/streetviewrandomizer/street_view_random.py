@@ -29,11 +29,20 @@ SHAPE_FILE: str = "bot/cogs/geo_cog/streetviewrandomizer/TM_WORLD_BORDERS-0.3/TM
 # Easy way to group related data together
 @dataclass
 class ImageData:
-    coord: Coordinate
-    country_df: gpd.GeoDataFrame
-    attempts: int
-    total_elapsed_time_ms: int
-    error_code: int
+    coord: Coordinate | None
+    country_df: gpd.GeoDataFrame | None
+    attempts: int | None
+    total_elapsed_time_ms: int | None
+    error_code: int | None
+
+
+@dataclass
+class CoordinateUrl:
+    url: str
+    latitude: float
+    longitude: float
+    iso3: str
+    new_selection: list[str]
 
 
 class StreetViewRandom:
@@ -83,7 +92,7 @@ class StreetViewRandom:
             iso2_conversion = [StreetViewRandom.get_parameter(x, "iso2") for x in random_sample]
         return random_sample
 
-    async def run(self, args: dict) -> tuple[str, float, float, str, list[str]]:
+    async def run(self, args: dict) -> CoordinateUrl:
         # Download QGIS to interact with this file
         gdf = gpd.read_file(SHAPE_FILE)
         country = args['countries'][0]
@@ -142,7 +151,7 @@ class StreetViewRandom:
 
         size = args['size']
 
-        return (('https://maps.googleapis.com/maps/api/streetview?'
+        return CoordinateUrl(('https://maps.googleapis.com/maps/api/streetview?'
                 + f'size={size}&'
                 + f'location={coord.lat},{coord.lon}&'
                 + f"heading={args['headings']}&"
@@ -179,7 +188,7 @@ class StreetViewRandom:
         total_elapsed_time_ms = 0
         image_found = False
 
-        while not image_found:
+        while True:
             start = timer()
             attempts += 1
             country_df = self.get_random_country(gdf)
@@ -207,6 +216,9 @@ class StreetViewRandom:
             total_elapsed_time_ms += elapsed_ms
 
             if status == "OK":
+                break
+
+            if image_found:
                 break
 
         return ImageData(coord, country_df, attempts, total_elapsed_time_ms, 0)
