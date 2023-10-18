@@ -99,6 +99,7 @@ class StreetViewRandom:
         new_country_selections_if_error = list()
 
         coord = Coordinate(0, 0)
+        country_iso3 = ""
 
         gdf = gdf.loc[gdf['ISO3'] == f"{country}"]
         gdf = gdf.assign(IMAGES=0)
