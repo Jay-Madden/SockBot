@@ -91,9 +91,3 @@ class ClassTA:
     @property
     def has_details(self) -> bool:
         return self.ta_details and len(self.ta_details.strip()) > 0
-
-@dataclass
-class GeoguessrLeaderboard:
-    id: int
-    user_id: int
-    score: int
