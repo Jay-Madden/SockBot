@@ -1,5 +1,4 @@
 import aiohttp as aiohttp
-import asyncio
 import bot.bot_secrets as bot_secrets
 import json
 import logging
@@ -13,6 +12,7 @@ nest_asyncio.apply()
 
 
 class StreetViewStaticApi:
+
     @staticmethod
     async def geolocate(quota: int, pic_base: str, filename: str, location_params: dict) -> tuple[str, float]:
         start = timer()
@@ -22,7 +22,6 @@ class StreetViewStaticApi:
                                         params=location_params,
                                         allow_redirects=False) as resp:
                 pic_response = await resp.read()
-                await curr_session.close()
                 f = open(f'bot/cogs/geo_cog/temp_assets/{filename}', 'wb')
                 f.write(pic_response)
                 f.close()
@@ -33,9 +32,6 @@ class StreetViewStaticApi:
 
     @staticmethod
     async def has_image(coord: Coordinate, radius_m: int) -> tuple[Coordinate, bool]:
-        # Check if the API key exists.
-        if bot_secrets.secrets.geocode_key is None:
-            raise Exception("API key is required. Use --api-key or set the GOOGLE_MAPS_API_KEY environment variable.")
         """
         Check if the location has an image.
         :param coord: Coordinate.
@@ -46,7 +42,6 @@ class StreetViewStaticApi:
                                                                    "key": bot_secrets.secrets.geocode_key,
                                                                    "radius": radius_m},
                                allow_redirects=False) as resp:
-
             response = json.loads(await resp.text())
 
             if response["status"] == "OVER_QUERY_LIMIT":
@@ -82,7 +77,4 @@ class StreetViewStaticApi:
                                allow_redirects=False) as resp:
 
             response = await resp.read()
-
-            await asyncio.sleep(1)
-
             return response
