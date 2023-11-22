@@ -60,11 +60,12 @@ class BirthdayCog(commands.Cog):
             await member.remove_roles(birthday_role, reason="No longer birthday")
 
         for birthday in birthdays:
-            if not birthday.last_congratulated or today - datetime.fromisoformat(
+            if not birthday.last_congratulated or True or today - datetime.fromisoformat(
                     birthday.last_congratulated.split('.')[0]) > timedelta(hours=24):
                 age_format = ' '
                 if birthday.year:
-                    age_format = f" {self.get_age(birthday)}{self.get_ordinal_suffix(birthday.day)} "
+                    age = self.get_age(birthday)
+                    age_format = f" {age}{self.get_ordinal_suffix(age)} "
                 member: discord.Member = await guild.fetch_member(birthday.member_id)
                 embed = discord.Embed(color=Colors.Purple, title="⭐ WE HAVE A BIRTHDAY! ⭐",
                                       description=f"The Clemson CPSC discord wants to wish you a very happy{age_format}birthday today, {str(member)}!")

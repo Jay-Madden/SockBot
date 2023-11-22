@@ -22,10 +22,10 @@ class BotSecrets:
         self._error_log_channel_ids: list[int] | None = None
         self._class_archive_category_ids: list[int] | None = None
         self._class_notifs_channel_id: int | None = None
-        self._birthday_role_id: Optional[int] = None
-        self._birthday_cooldown_in_days: Optional[int] = None
-        self._birthday_channel_id: Optional[int] = None
-        self._birthday_announcement_mode: Optional[int] = None
+        self._birthday_role_id: int | None = None
+        self._birthday_cooldown_in_days: int | None = None
+        self._birthday_channel_id: int | None = None
+        self._birthday_announcement_mode: int | None = None
 
     @property
     def bot_token(self) -> str:
@@ -187,7 +187,7 @@ class BotSecrets:
         return self._birthday_role_id
 
     @birthday_role_id.setter
-    def birthday_role_id(self, value: Optional[int]) -> None:
+    def birthday_role_id(self, value: int | None) -> None:
         if self._birthday_role_id:
             raise ConfigAccessError("birthday_role_id has already been initialized")
         self._birthday_role_id = value
@@ -199,7 +199,7 @@ class BotSecrets:
         return self._birthday_cooldown_in_days
 
     @birthday_cooldown_in_days.setter
-    def birthday_cooldown_in_days(self, value: Optional[int]) -> None:
+    def birthday_cooldown_in_days(self, value: int | None) -> None:
         if self._birthday_cooldown_in_days:
             raise ConfigAccessError("birthday_cooldown_in_days has already been initialized")
         self._birthday_cooldown_in_days = value
@@ -211,7 +211,7 @@ class BotSecrets:
         return self._birthday_channel_id
 
     @birthday_channel_id.setter
-    def birthday_channel_id(self, value: Optional[int]) -> None:
+    def birthday_channel_id(self, value: int | None) -> None:
         if self._birthday_channel_id:
             raise ConfigAccessError("birthday_channel_id has already been initialized")
         self._birthday_channel_id = value
@@ -223,7 +223,7 @@ class BotSecrets:
         return self._birthday_announcement_mode
 
     @birthday_announcement_mode.setter
-    def birthday_announcement_mode(self, value: Optional[int]) -> None:
+    def birthday_announcement_mode(self, value: int | None) -> None:
         if self._birthday_announcement_mode:
             raise ConfigAccessError("birthday_announcement_mode has already been initialized")
         self._birthday_announcement_mode = value
@@ -251,8 +251,8 @@ class BotSecrets:
         log.info("Bot Secrets Loaded")
 
     def load_production_secrets(self) -> None:
-
-        # Ignore these type errors, mypy doesn't know how to handle properties that return narrower types then they are assigned too
+        # Ignore these type errors, mypy doesn't know how to handle properties that return narrower types then they
+        # are assigned too
         self.bot_token = os.environ.get("BOT_TOKEN")  # type: ignore
         self.bot_prefix = os.environ.get("BOT_PREFIX")  # type: ignore
         self.startup_log_channel_ids = [
