@@ -1,6 +1,7 @@
 import json
 import os
 import logging
+from typing import Optional
 
 from bot.errors import ConfigAccessError
 
@@ -21,6 +22,10 @@ class BotSecrets:
         self._error_log_channel_ids: list[int] | None = None
         self._class_archive_category_ids: list[int] | None = None
         self._class_notifs_channel_id: int | None = None
+        self._birthday_role_id: Optional[int] = None
+        self._birthday_cooldown_in_days: Optional[int] = None
+        self._birthday_channel_id: Optional[int] = None
+        self._birthday_announcement_mode: Optional[int] = None
 
     @property
     def bot_token(self) -> str:
@@ -175,6 +180,54 @@ class BotSecrets:
             raise ConfigAccessError("class_notifs_channel_id has already been initialized")
         self._class_notifs_channel_id = value
 
+    @property
+    def birthday_role_id(self) -> int:
+        if not self._birthday_role_id:
+            raise ConfigAccessError("birthday_role_id has not been initialized")
+        return self._birthday_role_id
+
+    @birthday_role_id.setter
+    def birthday_role_id(self, value: Optional[int]) -> None:
+        if self._birthday_role_id:
+            raise ConfigAccessError("birthday_role_id has already been initialized")
+        self._birthday_role_id = value
+
+    @property
+    def birthday_cooldown_in_days(self) -> int:
+        if not self._birthday_cooldown_in_days:
+            raise ConfigAccessError("birthday_cooldown_in_days has not been initialized")
+        return self._birthday_cooldown_in_days
+
+    @birthday_cooldown_in_days.setter
+    def birthday_cooldown_in_days(self, value: Optional[int]) -> None:
+        if self._birthday_cooldown_in_days:
+            raise ConfigAccessError("birthday_cooldown_in_days has already been initialized")
+        self._birthday_cooldown_in_days = value
+
+    @property
+    def birthday_channel_id(self) -> int:
+        if not self._birthday_channel_id:
+            raise ConfigAccessError("birthday_channel_id has not been initialized")
+        return self._birthday_channel_id
+
+    @birthday_channel_id.setter
+    def birthday_channel_id(self, value: Optional[int]) -> None:
+        if self._birthday_channel_id:
+            raise ConfigAccessError("birthday_channel_id has already been initialized")
+        self._birthday_channel_id = value
+
+    @property
+    def birthday_announcement_mode(self) -> int:
+        if not self._birthday_announcement_mode:
+            raise ConfigAccessError("birthday_announcement_mode has not been initialized")
+        return self._birthday_announcement_mode
+
+    @birthday_announcement_mode.setter
+    def birthday_announcement_mode(self, value: Optional[int]) -> None:
+        if self._birthday_announcement_mode:
+            raise ConfigAccessError("birthday_announcement_mode has already been initialized")
+        self._birthday_announcement_mode = value
+
     def load_development_secrets(self, lines: str) -> None:
         secrets = json.loads(lines)
 
@@ -190,6 +243,10 @@ class BotSecrets:
         self.azure_translate_key = secrets["AzureTranslateKey"]
         self.class_archive_category_ids = secrets["ClassArchiveCategoryIds"]
         self.class_notifs_channel_id = secrets["ClassNotifsChannelId"]
+        self.birthday_role_id = secrets["BirthdayRoleId"]
+        self.birthday_channel_id = secrets["BirthdayChannelId"]
+        self.birthday_cooldown_in_days = secrets["BirthdayCooldownInDays"]
+        self.birthday_announcement_mode = secrets["BirthdayAnnouncementMode"]
 
         log.info("Bot Secrets Loaded")
 
@@ -214,7 +271,10 @@ class BotSecrets:
             int(n) for n in os.environ.get("CLASS_ARCHIVE_CATEGORY_IDS").split(",")  # type: ignore
         ]
         self.class_notifs_channel_id = int(os.environ.get("CLASS_NOTIFS_CHANNEL_ID"))  # type: ignore
-
+        self.birthday_role_id = int(os.getenv("BirthdayRoleId"))  # type: ignore
+        self.birthday_channel_id = int(os.getenv("BirthdayChannelId"))  # type: ignore
+        self.birthday_cooldown_in_days = int(os.getenv("BirthdayCooldownInDays"))  # type: ignore
+        self.birthday_announcement_mode = int(os.getenv("BirthdayAnnouncementMode"))  # type: ignore
         log.info("Production keys loaded")
 
 
