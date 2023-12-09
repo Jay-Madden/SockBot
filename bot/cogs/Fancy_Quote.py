@@ -16,7 +16,12 @@ class FancyQuoteCog(commands.Cog):
     @ext.long_help(
         "Creates a fancy quote based on the given message with the author either being given or being the username")
     @ext.short_help("Creates a fancy quote from the given value")
-    @ext.example("fancy_quote \"<Author Name>\" <Quote String>")
+    @ext.example(
+        (
+                "fancy_quote @<Author Name> <Quote String>",
+                "fancy_quote <Author Name> <Quote String>"
+        )
+    )
     async def fancy_quote(self, ctx, member: discord.Member | str, *, quote: str) -> None:
 
         error_title = ""
