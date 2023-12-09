@@ -17,6 +17,7 @@ class BotSecrets:
         self._weather_key: str | None = None
         self._geocode_key: str | None = None
         self._azure_translate_key: str | None = None
+        self._api_ninjas_key: str | None = None
         self._startup_log_channel_ids: list[int] | None = None
         self._error_log_channel_ids: list[int] | None = None
         self._class_archive_category_ids: list[int] | None = None
@@ -152,6 +153,18 @@ class BotSecrets:
         self._azure_translate_key = value
 
     @property
+    def api_ninjas_key(self) -> str:
+        if not self._api_ninjas_key:
+            raise ConfigAccessError("api_ninjas_key has not been initialized")
+        return self._api_ninjas_key
+
+    @api_ninjas_key.setter
+    def api_ninjas_key(self, value: str | None) -> None:
+        if self._api_ninjas_key:
+            raise ConfigAccessError("api_ninjas_key has already been initialized")
+        self._api_ninjas_key = value
+
+    @property
     def class_archive_category_ids(self) -> list[int]:
         if not self._class_archive_category_ids:
             raise ConfigAccessError("class_archive_category_ids has not been initialized")
@@ -188,6 +201,7 @@ class BotSecrets:
         self.weather_key = secrets["WeatherKey"]
         self.geocode_key = secrets["GeocodeKey"]
         self.azure_translate_key = secrets["AzureTranslateKey"]
+        self.api_ninjas_key = secrets["ApiNinjasKey"]
         self.class_archive_category_ids = secrets["ClassArchiveCategoryIds"]
         self.class_notifs_channel_id = secrets["ClassNotifsChannelId"]
 
@@ -210,6 +224,7 @@ class BotSecrets:
         self.weather_key = os.environ.get("WEATHER_KEY")  # type: ignore
         self.geocode_key = os.environ.get("GEOCODE_KEY")  # type: ignore
         self.azure_translate_key = os.environ.get("AZURE_TRANSLATE_KEY")  # type: ignore
+        self.api_ninjas_key = os.environ.get("API_NINJAS_KEY")  # type: ignore
         self.class_archive_category_ids = [
             int(n) for n in os.environ.get("CLASS_ARCHIVE_CATEGORY_IDS").split(",")  # type: ignore
         ]
