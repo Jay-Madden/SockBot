@@ -65,6 +65,17 @@ CREATE TABLE IF NOT EXISTS ClassTA
         ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS Birthdays
+(
+    member_id INTEGER PRIMARY KEY,
+    month INTEGER NOT NULL,
+    day INTEGER NOT NULL,
+    year INTEGER,
+    last_used INTEGER, -- unix timestamp
+    last_congratulated INTEGER -- unix timestamp to not resend messages if bot restarts that same day
+);
+
+
 -- Populate ClassSemester table, if the values do not exist.
 
 -- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
