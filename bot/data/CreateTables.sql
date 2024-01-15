@@ -74,10 +74,13 @@ CREATE TABLE IF NOT EXISTS ClassTA
 -- Start AND end date times should NOT overlap with other semesters.                    !!
 -- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-INSERT OR IGNORE INTO ClassSemester(semester_id, semester_name, semester_start, semester_end) VALUES
-    ('sp2023', 'Spring 2023',   '2023-01-06 05:00:00',  '2023-05-10 05:00:00'),
-    ('su2023', 'Summer 2023',   '2023-05-11 05:00:00',  '2023-08-12 05:00:00'),
-    ('fa2023', 'Fall 2023',     '2023-08-18 05:00:00',  '2023-12-20 05:00:00');
+
+INSERT OR IGNORE INTO ClassSemester(semester_id, semester_name, semester_start, semester_end)
+VALUES ('sp2023', 'Spring 2023',    '2023-01-06 05:00:00', '2023-05-10 05:00:00'),
+       ('su2023', 'Summer 2023',    '2023-05-11 05:00:00', '2023-08-12 05:00:00'),
+       ('fa2023', 'Fall 2023',      '2023-08-18 05:00:00', '2023-12-20 05:00:00'),
+       ('sp2024', 'Spring 2024',    '2024-01-05 05:00:00', '2024-05-08 05:00:00'),
+       ('su2024', 'Summer 2024',    '2024-05-09 05:00:00', '2024-08-10 05:00:00');
 
 -- Geoguessr Scoreboard
 CREATE TABLE IF NOT EXISTS GeoguessrLeaderboard (
