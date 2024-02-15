@@ -11,6 +11,12 @@ aiosqlite = "^0.19.0"
 Pillow = "^9.2.0"
 "discord.py" = "^2.0.0"
 python-dateutil = "^2.8.2"
+requests = "^2.31.0"
+asyncio = "^3.4.3"
+nest-asyncio = "^1.5.8"
+aiohttp = "^3.8.6"
+shapely = "^2.0.2"
+geopandas = "^0.14.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.3.1"

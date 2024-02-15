@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from datetime import datetime
-
 from bot.utils.helpers import strtodt
 
 
@@ -80,3 +79,4 @@ class ClassTA:
     @property
     def has_details(self) -> bool:
         return self.ta_details and len(self.ta_details.strip()) > 0
+
